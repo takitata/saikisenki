@@ -150,6 +150,19 @@
     if (!roundData.nextReady?.[role] || !roundData.nextReady?.[other]) return "nextRound";
     return "settled";
   }
+  function supportPhaseState(roundData = {}, role = "host", supportSealedByEffect = false, selectedSupportId = "", commitPending = false) {
+    const other = role === "host" ? "guest" : "host";
+    const supportCommitted = Boolean(roundData.supportCommits?.[role]);
+    const opponentCommitted = Boolean(roundData.supportCommits?.[other]);
+    return {
+      supportSelected: Boolean(selectedSupportId),
+      supportCommitted,
+      waitingForOpponentSupport: supportCommitted && !opponentCommitted,
+      supportRevealed: Boolean(roundData.supportReveals?.host && roundData.supportReveals?.guest),
+      supportSealedByEffect: Boolean(supportSealedByEffect),
+      supportCommitPending: Boolean(commitPending)
+    };
+  }
   function nextRoundNumber(matchData) {
     let round = 1;
     while (isSettledRound(matchData?.rounds?.[String(round)])) round++;
@@ -202,5 +215,5 @@
     }
     return match;
   }
-  return { stableAction, stableSupport, sha256, createCommitment, createSupportCommitment, verifyReveal, verifySupportReveal, randomHex, deriveDice, rngFor, snapshot, hashSnapshot, isSettledRound, phaseFor, nextRoundNumber, makeMatch, prepareSupportPhase, beginRevealedRound, finishRevealedRound, resolveRevealedRound };
+  return { stableAction, stableSupport, sha256, createCommitment, createSupportCommitment, verifyReveal, verifySupportReveal, randomHex, deriveDice, rngFor, snapshot, hashSnapshot, isSettledRound, phaseFor, supportPhaseState, nextRoundNumber, makeMatch, prepareSupportPhase, beginRevealedRound, finishRevealedRound, resolveRevealedRound };
 });

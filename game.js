@@ -17,6 +17,7 @@
   let onlineBattleMode = false;
   let onlineBattleController = null;
   let onlineBattleStatus = "";
+  let onlineSupportPhaseState = { supportSelected:false, supportCommitted:false, waitingForOpponentSupport:false, supportRevealed:false, supportSealedByEffect:false, supportCommitPending:false };
   let onlinePublicSupports = null;
 
   function makeOwnedCards(deck, prefix) {
@@ -427,9 +428,10 @@
   }
   function renderSupportControls() {
     const cards=match.player.supportCards;
-    const gameSealed=Boolean(match.supportLockNextRound.player);
-    const supportCommitted=Boolean(onlineBattleMode&&onlineBattleStatus.includes("サポート確定済み"));
-    const locked=gameSealed||supportCommitted;
+    const gameSealed=Boolean(onlineBattleMode ? onlineSupportPhaseState.supportSealedByEffect : match.supportLockNextRound.player);
+    const supportCommitted=Boolean(onlineBattleMode&&onlineSupportPhaseState.supportCommitted);
+    const commitPending=Boolean(onlineBattleMode&&onlineSupportPhaseState.supportCommitPending);
+    const locked=gameSealed||supportCommitted||commitPending;
     const html=cards.map(owned=>{
       const card=byId.get(owned.cardId); const rare=card.rarity!=="normal";
       const selected=owned.instanceId===selectedSupportId;
@@ -438,10 +440,11 @@
     $("#supportChoiceList").innerHTML=html||`<p class="log-empty">使用できるサポートカードがありません。</p>`;
     const selected=cards.find(item=>item.instanceId===selectedSupportId);
     const card=selected?byId.get(selected.cardId):null;
-    $("#supportPreview").innerHTML=(card?`<strong>${card.name}の効果</strong><span>${supportText(card)}</span>${supportWarning(card)}`:"サポートを選ぶと効果が表示されます。")+(gameSealed?`<span class="support-warning">封印術師の能力により、このラウンドはサポートを使用できません。</span>`:supportCommitted?`<span class="support-warning">サポート確定済み · 相手の選択を待っています。</span>`:"");
+    const waitText=onlineSupportPhaseState.supportRevealed?"両者のサポートが公開されました。":onlineSupportPhaseState.waitingForOpponentSupport?"相手のサポート選択を待っています。":"";
+    $("#supportPreview").innerHTML=(card?`<strong>${card.name}の効果</strong><span>${supportText(card)}</span>${supportWarning(card)}`:"サポートを選ぶと効果が表示されます。")+(gameSealed?`<span class="support-warning">封印術師の能力により、このラウンドはサポートを使用できません。</span>`:supportCommitted?`<span class="support-warning">サポート確定済み${waitText?` · ${waitText}`:""}</span>`:commitPending?`<span class="support-warning">サポート確定を送信しています…</span>`:"");
     $("#useSupportButton").disabled=!card||locked;
-    $("#skipSupportButton").disabled=supportCommitted;
-    $("#skipSupportButton").textContent=gameSealed?"封印中：サポートなしを確定":supportCommitted?"サポート確定済み":"サポートを使わない";
+    $("#skipSupportButton").disabled=supportCommitted||commitPending;
+    $("#skipSupportButton").textContent=gameSealed?"封印中：サポートなしを確定":supportCommitted?"サポート確定済み":commitPending?"確定中…":"サポートを使わない";
   }
 
   function renderReviveControls() {
@@ -545,16 +548,17 @@
     getBattleIds: cardIds => window.CPU_DECK.chooseBattleIds(cardIds, byId, MAX_BATTLE_CARDS)
   };
   window.CPUOnlineBattleUI = {
-    start(onlineMatch, controller, status = "") {
-      match = onlineMatch; onlineBattleMode = true; onlineBattleController = controller; onlineBattleStatus = status; selectedSupportId = null; onlinePublicSupports = null;
+    start(onlineMatch, controller, status = "", supportState = null) {
+      match = onlineMatch; onlineBattleMode = true; onlineBattleController = controller; onlineBattleStatus = status; selectedSupportId = null; onlineSupportPhaseState = supportState || { supportSelected:false, supportCommitted:false, waitingForOpponentSupport:false, supportRevealed:false, supportSealedByEffect:false, supportCommitPending:false }; onlinePublicSupports = null;
       $("#startView").hidden = true; $("#onlineView").hidden = true; $("#buildView").hidden = true; $("#completeView").hidden = true; $("#battleView").hidden = false;
       setPhase("PHASE 03", "オンラインバトル"); renderBattle(); window.scrollTo({top:0,behavior:"smooth"});
     },
-    update(onlineMatch, status = "") { match = onlineMatch; onlineBattleMode = true; onlineBattleStatus = status; renderBattle(); },
-    showStatus(status = "") { onlineBattleStatus = status; renderBattle(); },
-    setSupport(instanceId = "") { selectedSupportId = instanceId || null; if (match) renderSupportControls(); },
+    update(onlineMatch, status = "", supportState = null) { match = onlineMatch; onlineBattleMode = true; onlineBattleStatus = status; if(supportState) onlineSupportPhaseState=supportState; renderBattle(); },
+    showStatus(status = "", supportState = null) { onlineBattleStatus = status; if(supportState) onlineSupportPhaseState=supportState; renderBattle(); },
+    setSupportPhaseState(supportState) { onlineSupportPhaseState=supportState; if(match) renderBattle(); },
+    setSupport(instanceId = "") { selectedSupportId = instanceId || null; onlineSupportPhaseState={...onlineSupportPhaseState,supportSelected:Boolean(selectedSupportId)}; if (match) renderSupportControls(); },
     setPublicSupports(choices = null) { onlinePublicSupports = choices; if (match) { renderOnlineSupportReveal(); renderBattle(); } },
-    end() { onlineBattleMode = false; onlineBattleController = null; onlineBattleStatus = ""; onlinePublicSupports = null; match = null; $("#battleView").hidden = true; }
+    end() { onlineBattleMode = false; onlineBattleController = null; onlineBattleStatus = ""; onlineSupportPhaseState={supportSelected:false,supportCommitted:false,waitingForOpponentSupport:false,supportRevealed:false,supportSealedByEffect:false,supportCommitPending:false}; onlinePublicSupports = null; match = null; $("#battleView").hidden = true; }
   };
   poolGrid.addEventListener("click",event=>{const item=event.target.closest("[data-pool-card]");if(item)togglePoolCard(item.dataset.poolCard);});
   poolGrid.addEventListener("keydown",event=>{if(event.key!=="Enter"&&event.key!==" ")return;const item=event.target.closest("[data-pool-card]");if(item){event.preventDefault();togglePoolCard(item.dataset.poolCard);}});
@@ -588,7 +592,7 @@
     const detail=event.target.closest(".support-detail");
     if(detail){openCardDetail(detail.dataset.inspectInstance);return;}
     const button=event.target.closest(".support-select");
-    if(button&&!button.disabled){selectedSupportId=button.dataset.supportInstance;renderSupportControls();}
+    if(button&&!button.disabled){selectedSupportId=button.dataset.supportInstance;if(onlineBattleMode)onlineSupportPhaseState={...onlineSupportPhaseState,supportSelected:true};renderSupportControls();}
   });
   for(const panel of [$("#playerBattlePanel"),$("#cpuBattlePanel")]) panel.addEventListener("click",event=>{
     const list=event.target.closest("[data-inspect-list]");

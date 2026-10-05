@@ -116,14 +116,14 @@ import {
   function readSupportSecret(roomId, round) { try { return JSON.parse(sessionStorage.getItem(supportSecretKey(roomId, round)) || "null"); } catch { return null; } }
   function writeSupportSecret(roomId, round, secret) { try { sessionStorage.setItem(supportSecretKey(roomId, round), JSON.stringify(secret)); return true; } catch { return false; } }
   function setBattleError(message) { showError(message); }
-  function setBattleStatus(message, match = onlineBattleMatch, start = false) {
+  function setBattleStatus(message, match = onlineBattleMatch, start = false, supportState = null) {
     onlineBattleMatch = match;
     if (!window.CPUOnlineBattleUI || !match) return;
     const opponent = currentRoom && currentRoomState?.presence?.[otherRole(currentRoom.role)];
     const connectionMessage = opponent && opponent.connected === false ? " · 対戦相手が切断中です…再接続を待っています" : "";
     const controller = onlineBattleController || { exit: exitRoom };
-    if (start) window.CPUOnlineBattleUI.start(match, controller, `${message}${connectionMessage}`);
-    else window.CPUOnlineBattleUI.update(match, `${message}${connectionMessage}`);
+    if (start) window.CPUOnlineBattleUI.start(match, controller, `${message}${connectionMessage}`, supportState);
+    else window.CPUOnlineBattleUI.update(match, `${message}${connectionMessage}`, supportState);
   }
   async function ensureOwnTeamManifest(room) {
     if (!currentRoom || !onlineDeal || !onlineFormation?.ready) return;
@@ -223,6 +223,7 @@ import {
     }
     const activeRound = String(roundNo);
     const saved = rounds[activeRound] || {};
+    const supportSealedByEffect = Boolean(match.supportLockNextRound.player);
     if (!core.isSettledRound(saved) && saved.supportReveals?.host && saved.supportReveals?.guest) {
       const hostSupport = saved.supportReveals.host, guestSupport = saved.supportReveals.guest;
       if (!(await core.verifySupportReveal(roundNo, "host", hostSupport, saved.supportCommits?.host)) || !(await core.verifySupportReveal(roundNo, "guest", guestSupport, saved.supportCommits?.guest))) throw new Error(`ROUND ${roundNo} のサポートcommit-reveal検証に失敗しました。`);
@@ -261,8 +262,9 @@ import {
     if (!onlineBattleController) onlineBattleController = makeBattleController();
     const status = pendingStatus(room, saved, match);
     let localDraft = {}; try { localDraft = JSON.parse(sessionStorage.getItem(supportDraftKey(currentRoom.roomId, roundNo)) || "{}"); } catch {}
-    if (!document.querySelector("#battleView")?.hidden) setBattleStatus(status, match);
-    else setBattleStatus(status, match, true);
+    const supportState = core.supportPhaseState(saved, role, supportSealedByEffect, localDraft.supportId || "");
+    if (!document.querySelector("#battleView")?.hidden) setBattleStatus(status, match, false, supportState);
+    else setBattleStatus(status, match, true, supportState);
     window.CPUOnlineBattleUI?.setSupport(localDraft.supportId || "");
     if (match.status === "diceChoice" && !match.pendingRound.playerData.rerollAvailable && saved.rerolls?.[role] === undefined) {
       await writeOnce(`${roundPath(currentRoom.roomId, roundNo)}/rerolls/${role}`, false);
@@ -290,12 +292,21 @@ import {
         try {
           sessionStorage.setItem(supportDraftKey(currentRoom.roomId, round), JSON.stringify({ supportId: choice.supportId }));
           if (!writeSupportSecret(currentRoom.roomId, round, choice)) throw new Error("サポート選択をこのブラウザーに一時保存できませんでした。");
-          setBattleStatus("サポート確定済み · 相手のサポート選択を待っています", onlineBattleMatch);
+          window.CPUOnlineBattleUI?.setSupportPhaseState(core.supportPhaseState(currentRoomState?.match?.rounds?.[String(round)] || {}, currentRoom.role, sealed, choice.supportId, true));
+          setBattleStatus("サポート確定を送信しています…", onlineBattleMatch);
           const commitment = await core.createSupportCommitment(round, currentRoom.role, choice);
           await writeOnce(`${roundPath(currentRoom.roomId, round)}/supportCommits/${currentRoom.role}`, commitment);
           actionSubmittingRound = null;
+          const latest = currentRoomState?.match?.rounds?.[String(round)] || {};
+          const committedRound = { ...latest, supportCommits: { ...(latest.supportCommits || {}), [currentRoom.role]: commitment } };
+          window.CPUOnlineBattleUI?.setSupportPhaseState(core.supportPhaseState(committedRound, currentRoom.role, sealed, choice.supportId));
           setBattleStatus("サポート確定済み · 相手のサポート選択を待っています", onlineBattleMatch);
-        } catch (error) { actionSubmittingRound = null; throw error; }
+        } catch (error) {
+          actionSubmittingRound = null;
+          const latest = currentRoomState?.match?.rounds?.[String(round)] || {};
+          window.CPUOnlineBattleUI?.setSupportPhaseState(core.supportPhaseState(latest, currentRoom.role, Boolean(onlineBattleMatch?.supportLockNextRound.player), choice.supportId));
+          throw error;
+        }
       },
       async submitHand(hand) {
         if (!currentRoom || !onlineBattleMatch || onlineBattleMatch.status !== "handChoice") return;
