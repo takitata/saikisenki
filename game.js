@@ -17,6 +17,7 @@
   let onlineBattleMode = false;
   let onlineBattleController = null;
   let onlineBattleStatus = "";
+  let onlinePublicSupports = null;
 
   function makeOwnedCards(deck, prefix) {
     return deck.map((cardId, index) => ({ instanceId: `${prefix}-${String(index + 1).padStart(2, "0")}`, cardId }));
@@ -408,6 +409,17 @@
     return `<div class="round-reveal ${won?"won":drew?"tied":"lost"}"><span class="reveal-round">ROUND ${latest.round} RESULT</span><div class="hands-reveal"><span><small>あなた</small><b>${engine.HAND_LABELS[latest.playerHand]}</b></span><i>VS</i><span><small>${onlineBattleMode?"相手":"CPU"}</small><b>${engine.HAND_LABELS[latest.cpuHand]}</b></span></div><strong>${resultLabel(latest.rpsResult)}</strong><p>ログに計算過程を記録しました。</p></div>`;
   }
 
+  function renderOnlineSupportReveal() {
+    const target = $("#onlineSupportReveal");
+    if (!onlineBattleMode || !onlinePublicSupports) { target.hidden = true; target.innerHTML = ""; return; }
+    const renderChoice = (label, choice) => {
+      const card = choice?.supportDefinitionId ? byId.get(choice.supportDefinitionId) : null;
+      return `<article class="online-support-reveal-card"><span class="panel-kicker">${label}</span><b>${card ? card.name : "サポートなし"}</b><small>${card ? supportText(card) : "このラウンドはサポートを使用しません。"}</small></article>`;
+    };
+    target.hidden = false;
+    target.innerHTML = `<div class="online-support-reveal-heading"><span class="panel-kicker">SUPPORT REVEALED</span><strong>両者のサポートが公開されました</strong></div><div class="online-support-reveal-grid">${renderChoice("あなた", onlinePublicSupports.own)}${renderChoice("相手", onlinePublicSupports.opponent)}</div>`;
+  }
+
   function supportWarning(card) {
     const active=match.player.activeCard;
     if (active && active.currentHp===active.maxHp && card.support.some(item=>item.kind==="heal")) return `<span class="support-warning">HPは満タンです。この回復は無駄になります。</span>`;
@@ -415,18 +427,18 @@
   }
   function renderSupportControls() {
     const cards=match.player.supportCards;
-    const locked=match.supportLockNextRound.player;
+    const locked=match.supportLockNextRound.player || (onlineBattleMode && onlineBattleStatus.includes("サポート確定済み"));
     const html=cards.map(owned=>{
       const card=byId.get(owned.cardId); const rare=card.rarity!=="normal";
       const selected=owned.instanceId===selectedSupportId;
-      return `<article class="support-pick ${selected?"selected":""}"><div class="support-pick-copy"><span class="rarity ${card.rarity}">${window.CARD_RARITY_LABELS[card.rarity]}</span><b>${card.name}</b><small>${supportText(card)}</small></div><div class="support-pick-actions"><button type="button" class="support-select" data-support-instance="${owned.instanceId}" ${locked?"disabled":""}>${selected?"選択中":"使用候補"}</button><button type="button" class="support-detail" data-inspect-instance="${owned.instanceId}">詳細</button></div></article>`;
+      return `<article class="support-pick ${selected?"selected":""}"><div class="support-pick-copy"><span class="rarity ${card.rarity}">${window.CARD_RARITY_LABELS[card.rarity]}</span><b>${card.name}</b><small>${supportText(card)}</small></div><div class="support-pick-actions"><button type="button" class="support-select" data-support-instance="${owned.instanceId}" ${locked?"disabled":""}>${locked?"確定済み":selected?"選択中":"使用候補"}</button><button type="button" class="support-detail" data-inspect-instance="${owned.instanceId}">詳細</button></div></article>`;
     }).join("");
     $("#supportChoiceList").innerHTML=html||`<p class="log-empty">使用できるサポートカードがありません。</p>`;
     const selected=cards.find(item=>item.instanceId===selectedSupportId);
     const card=selected?byId.get(selected.cardId):null;
     $("#supportPreview").innerHTML=(card?`<strong>${card.name}の効果</strong><span>${supportText(card)}</span>${supportWarning(card)}`:"サポートを選ぶと効果が表示されます。")+(locked?`<span class="support-warning">封印術師の能力により、このラウンドはサポートを使用できません。</span>`:"");
     $("#useSupportButton").disabled=!card||locked||Boolean(onlineBattleMode&&onlineBattleStatus.includes("確定済み"));
-    $("#skipSupportButton").disabled=Boolean(onlineBattleMode&&onlineBattleStatus.includes("確定済み"));
+    $("#skipSupportButton").disabled=Boolean(onlineBattleMode&&onlineBattleStatus.includes("サポート確定済み"));
     $("#skipSupportButton").textContent=locked?"封印中：サポートを使わず進む":"サポートを使わない";
   }
 
@@ -445,18 +457,19 @@
     $("#battleHeading").innerHTML = onlineBattleMode ? "ONLINE <em>バトル</em>" : "CPU <em>バトル</em>";
     $("#onlineBattleStatus").textContent = onlineBattleStatus;
     $("#battleBackButton").textContent = onlineBattleMode ? "ルームを退出" : "編成に戻る";
-    $("#handChoiceHelp").textContent = onlineBattleMode ? "手とサポートを確定すると、両者の確定後に同時公開されます。" : "CPUの手は確定するまで表示されません。";
+    $("#handChoiceHelp").textContent = onlineBattleMode ? "公開されたサポートを確認して手を選びます。じゃんけんの手は両者の確定後に公開されます。" : "CPUの手は確定するまで表示されません。";
     $("#nextRoundButton").disabled = onlineBattleMode && (!onlineBattleStatus.includes("次のラウンド") || onlineBattleStatus.includes("準備完了"));
     $("#playerBattlePanel").innerHTML = cardPanel(match.player, "player");
     $("#cpuBattlePanel").innerHTML = cardPanel(match.cpu, "cpu");
     $("#roundReveal").innerHTML = renderLatestResult();
+    renderOnlineSupportReveal();
     const status=match.status;
     $("#supportControls").hidden=status!=="supportSelection";
     $("#handControls").hidden=status!=="handChoice";
     $("#diceControls").hidden=status!=="diceChoice";
     $("#reviveControls").hidden=status!=="reviveChoice";
     $("#nextRoundControls").hidden=status!=="roundResolved";
-    document.querySelectorAll(".hand-button").forEach(button=>{button.disabled=status!=="handChoice" || Boolean(onlineBattleMode&&onlineBattleStatus.includes("確定済み"));});
+    document.querySelectorAll(".hand-button").forEach(button=>{button.disabled=status!=="handChoice" || Boolean(onlineBattleMode&&onlineBattleStatus.includes("じゃんけん確定済み"));});
     renderSupportControls();
     if(status==="diceChoice"&&match.pendingRound){
       const p=match.pendingRound;
@@ -470,11 +483,19 @@
     if(status==="reviveChoice") renderReviveControls();
     $("#battleResult").hidden = match.status !== "finished";
     $("#battleControls").hidden = status === "finished";
+    const onlineFinished = onlineBattleMode && status === "finished";
+    $("#cpuRematchActions").hidden = onlineFinished;
+    $("#onlineExitResultButton").hidden = !onlineFinished;
+    $("#battleBackButton").hidden = onlineFinished;
+    $(".battle-titlebar").hidden = onlineFinished;
+    $(".battle-arena").hidden = onlineFinished;
+    $(".battle-log-section").hidden = onlineFinished;
     if (status === "finished") {
       $("#resultWord").textContent = match.outcome;
       $("#resultMessage").textContent = match.outcome === "WIN" ? `${onlineBattleMode?"相手":"CPU"}のバトルカードをすべて倒した。` : match.outcome === "LOSE" ? "あなたのバトルカードはすべてKOされた。" : "両チームが同時に全滅した。";
     }
-    $("#battleLog").innerHTML = match.log.slice().reverse().map(entry => `<article class="log-entry"><header><b>ROUND ${entry.round}</b><span>${entry.type==="roundResult"?resultLabel(entry.entry.rpsResult):entry.type==="support"?"サポート":entry.type==="reroll"?"振り直し":entry.type==="dice"?"じゃんけん・ダイス":"ラウンド開始"}</span></header><div>${engine.formatLog(entry).map(line => `<p>${line}</p>`).join("")}</div></article>`).join("") || `<p class="log-empty">ラウンド結果はここに表示されます。</p>`;
+    const displayLogLine = line => onlineBattleMode ? line.replaceAll("プレイヤー", "あなた").replaceAll("CPU", "相手") : line;
+    $("#battleLog").innerHTML = match.log.slice().reverse().map(entry => `<article class="log-entry"><header><b>ROUND ${entry.round}</b><span>${entry.type==="roundResult"?resultLabel(entry.entry.rpsResult):entry.type==="support"?"サポート":entry.type==="reroll"?"振り直し":entry.type==="dice"?"じゃんけん・ダイス":"ラウンド開始"}</span></header><div>${engine.formatLog(entry).map(line => `<p>${displayLogLine(line)}</p>`).join("")}</div></article>`).join("") || `<p class="log-empty">ラウンド結果はここに表示されます。</p>`;
   }
   function confirmSupport(instanceId) {
     if(!match||match.status!=="supportSelection")return;
@@ -523,14 +544,15 @@
   };
   window.CPUOnlineBattleUI = {
     start(onlineMatch, controller, status = "") {
-      match = onlineMatch; onlineBattleMode = true; onlineBattleController = controller; onlineBattleStatus = status; selectedSupportId = null;
+      match = onlineMatch; onlineBattleMode = true; onlineBattleController = controller; onlineBattleStatus = status; selectedSupportId = null; onlinePublicSupports = null;
       $("#startView").hidden = true; $("#onlineView").hidden = true; $("#buildView").hidden = true; $("#completeView").hidden = true; $("#battleView").hidden = false;
       setPhase("PHASE 03", "オンラインバトル"); renderBattle(); window.scrollTo({top:0,behavior:"smooth"});
     },
     update(onlineMatch, status = "") { match = onlineMatch; onlineBattleMode = true; onlineBattleStatus = status; renderBattle(); },
     showStatus(status = "") { onlineBattleStatus = status; renderBattle(); },
     setSupport(instanceId = "") { selectedSupportId = instanceId || null; if (match) renderSupportControls(); },
-    end() { onlineBattleMode = false; onlineBattleController = null; onlineBattleStatus = ""; match = null; $("#battleView").hidden = true; }
+    setPublicSupports(choices = null) { onlinePublicSupports = choices; if (match) { renderOnlineSupportReveal(); renderBattle(); } },
+    end() { onlineBattleMode = false; onlineBattleController = null; onlineBattleStatus = ""; onlinePublicSupports = null; match = null; $("#battleView").hidden = true; }
   };
   poolGrid.addEventListener("click",event=>{const item=event.target.closest("[data-pool-card]");if(item)togglePoolCard(item.dataset.poolCard);});
   poolGrid.addEventListener("keydown",event=>{if(event.key!=="Enter"&&event.key!==" ")return;const item=event.target.closest("[data-pool-card]");if(item){event.preventDefault();togglePoolCard(item.dataset.poolCard);}});
@@ -558,6 +580,7 @@
   $("#randomPlayerAgainButton").addEventListener("click",rematchRandomBoth);
   $("#sameCpuAgainButton").addEventListener("click", rematchSameCpu);
   $("#newCpuAgainButton").addEventListener("click", rematchNewCpu);
+  $("#onlineExitResultButton").addEventListener("click", () => onlineBattleController?.exit());
   document.querySelectorAll(".hand-button").forEach(button => button.addEventListener("click", () => playHand(button.dataset.hand)));
   $("#supportChoiceList").addEventListener("click",event=>{
     const detail=event.target.closest(".support-detail");

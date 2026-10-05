@@ -6,18 +6,27 @@
 })(typeof window !== "undefined" ? window : globalThis, function () {
   const encoder = new TextEncoder();
   const stableAction = (round, role, choice) => JSON.stringify({
-    protocol: "saikisenki-round-v1", round, role,
-    hand: choice.hand, supportId: choice.supportId || "", supportDefinitionId: choice.supportDefinitionId || "",
-    seed: choice.seed, nonce: choice.nonce
+    protocol: "saikisenki-rps-v1", round, role,
+    hand: choice.hand, seed: choice.seed, nonce: choice.nonce
+  });
+  const stableSupport = (round, role, choice) => JSON.stringify({
+    protocol: "saikisenki-support-v1", round, role,
+    supportId: choice.supportId || "", supportDefinitionId: choice.supportDefinitionId || "", nonce: choice.nonce
   });
   async function sha256(value) {
     const digest = await crypto.subtle.digest("SHA-256", encoder.encode(value));
     return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
   }
   async function createCommitment(round, role, choice) { return sha256(stableAction(round, role, choice)); }
+  async function createSupportCommitment(round, role, choice) { return sha256(stableSupport(round, role, choice)); }
   async function verifyReveal(round, role, choice, expectedHash) {
     if (!choice || !["rock", "scissors", "paper"].includes(choice.hand) || typeof choice.seed !== "string" || typeof choice.nonce !== "string") return false;
     return (await createCommitment(round, role, choice)) === expectedHash;
+  }
+  async function verifySupportReveal(round, role, choice, expectedHash) {
+    if (!choice || typeof choice.supportId !== "string" || typeof choice.supportDefinitionId !== "string" || typeof choice.nonce !== "string") return false;
+    if (Boolean(choice.supportId) !== Boolean(choice.supportDefinitionId)) return false;
+    return (await createSupportCommitment(round, role, choice)) === expectedHash;
   }
   function randomHex(byteLength = 32) {
     const bytes = new Uint8Array(byteLength);
@@ -127,6 +136,20 @@
   function isSettledRound(round) {
     return Boolean(round?.resultClaims?.host?.hash && round?.resultClaims?.guest?.hash && round.resultClaims.host.hash === round.resultClaims.guest.hash);
   }
+  function phaseFor(roundData = {}, role = "host") {
+    const other = role === "host" ? "guest" : "host";
+    if (!roundData.supportCommits?.[role]) return roundData.supportCommits?.[other] ? "supportSelectAfterOpponent" : "supportSelect";
+    if (!roundData.supportCommits?.[other]) return "supportWait";
+    if (!roundData.supportReveals?.host || !roundData.supportReveals?.guest) return "supportReveal";
+    if (!roundData.actionCommits?.[role]) return "rpsSelect";
+    if (!roundData.actionCommits?.[other]) return "rpsWait";
+    if (!roundData.actionReveals?.host || !roundData.actionReveals?.guest) return "rpsReveal";
+    if (roundData.rerolls?.[role] === undefined || roundData.rerolls?.[other] === undefined) return "reroll";
+    if (roundData.resultClaims?.host?.hash && roundData.resultClaims?.guest?.hash && roundData.resultClaims.host.hash !== roundData.resultClaims.guest.hash) return "desync";
+    if (!isSettledRound(roundData)) return "resolve";
+    if (!roundData.nextReady?.[role] || !roundData.nextReady?.[other]) return "nextRound";
+    return "settled";
+  }
   function nextRoundNumber(matchData) {
     let round = 1;
     while (isSettledRound(matchData?.rounds?.[String(round)])) round++;
@@ -154,8 +177,14 @@
     if (opponentChoice.supportId) addRevealedSupport(match.cpu, { instanceId: opponentChoice.supportId, cardId: opponentChoice.supportDefinitionId });
     engine.finishPairedSupportPhase(match, ownChoice.supportId || null, opponentChoice.supportId || null);
   }
+  function prepareSupportPhase(engine, match, ownSupport, opponentSupport) {
+    if (match.status === "supportSelection") applySupportChoices(engine, match, ownSupport, opponentSupport);
+    return match;
+  }
   function beginRevealedRound(engine, match, ownChoice, opponentChoice, ownDice, opponentDice) {
-    applySupportChoices(engine, match, ownChoice, opponentChoice);
+    if (match.status === "supportSelection") {
+      prepareSupportPhase(engine, match, ownChoice.supportChoice || { supportId: "", supportDefinitionId: "" }, opponentChoice.supportChoice || { supportId: "", supportDefinitionId: "" });
+    }
     engine.startRpsAndRoll(match, ownChoice.hand, { rng: rngFor([ownDice.initial, opponentDice.initial]), cpuHand: opponentChoice.hand, autoCpuReroll: false });
     return match;
   }
@@ -173,5 +202,5 @@
     }
     return match;
   }
-  return { stableAction, sha256, createCommitment, verifyReveal, randomHex, deriveDice, rngFor, snapshot, hashSnapshot, isSettledRound, nextRoundNumber, makeMatch, beginRevealedRound, finishRevealedRound, resolveRevealedRound };
+  return { stableAction, stableSupport, sha256, createCommitment, createSupportCommitment, verifyReveal, verifySupportReveal, randomHex, deriveDice, rngFor, snapshot, hashSnapshot, isSettledRound, phaseFor, nextRoundNumber, makeMatch, prepareSupportPhase, beginRevealedRound, finishRevealedRound, resolveRevealedRound };
 });

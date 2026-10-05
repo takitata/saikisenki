@@ -105,3 +105,12 @@ body.modal-open{overflow:hidden}
 .online-view.is-matched{display:block;min-height:100vh;padding:8px 12px}
 @media(max-width:760px){.online-panel.is-matched{padding:8px;gap:7px}.online-panel.is-matched>.online-formation-panel{padding:13px 10px}.online-panel.is-matched>.online-room-panel{gap:7px;padding:7px;flex-wrap:wrap}.online-panel.is-matched .online-room-id{font-size:12px}.online-panel.is-matched .online-player-status{width:100%;order:3;margin:0;justify-content:space-between}.online-panel.is-matched .online-room-actions{margin-left:auto}.online-formation-stats{gap:5px;margin:11px 0}.online-formation-stats b{padding:6px 8px;font-size:10px}.online-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.online-card-grid .game-card{min-height:264px}.online-card-grid .card-inner{padding:11px 10px}.online-card-grid .card-name{font-size:15px}.online-card-grid .die{height:24px;font-size:9px}.online-card-grid .ability{font-size:8px}.online-auto-formation{width:100%}.online-panel.is-matched>.online-back{align-self:stretch}}
 .online-battle-status{min-height:1.3em;margin:5px 0 0;color:#a9bbc1;font-size:11px;line-height:1.5}
+.online-support-reveal{margin:14px auto;padding:14px;width:min(100%,560px);border:1px solid rgba(160,196,204,.22);border-radius:14px;background:rgba(20,31,37,.92);}
+.online-support-reveal-heading{display:grid;gap:4px;margin-bottom:10px;text-align:center}
+.online-support-reveal-heading strong{font-size:15px;color:#edf5f5}
+.online-support-reveal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.online-support-reveal-card{min-width:0;display:grid;gap:5px;padding:11px;border-radius:10px;background:rgba(255,255,255,.035)}
+.online-support-reveal-card b{font-size:14px;overflow-wrap:anywhere}
+.online-support-reveal-card small{color:#a9bbc1;line-height:1.45;overflow-wrap:anywhere}
+.online-exit-result{margin-top:14px;min-width:min(100%,260px)}
+@media(max-width:600px){.online-support-reveal{padding:11px;margin:10px auto}.online-support-reveal-grid{gap:7px}.online-support-reveal-card{padding:9px}.online-support-reveal-card b{font-size:12px}.online-support-reveal-card small{font-size:11px}}

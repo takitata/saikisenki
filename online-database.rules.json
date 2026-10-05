@@ -79,19 +79,19 @@
             "$round": {
               "actionCommits": {
                 "$role": {
-                  ".write": "auth != null && !root.child('rooms').child($roomId).child('exit').exists() && $round === root.child('rooms').child($roomId).child('match').child('currentRound').val() && !data.exists() && newData.isString() && newData.val().matches(/^[0-9a-f]{64}$/) && root.child('rooms').child($roomId).child('match').child('teams').child('host').exists() && root.child('rooms').child($roomId).child('match').child('teams').child('guest').exists() && (($role === 'host' && auth.uid === root.child('rooms').child($roomId).child('hostUid').val()) || ($role === 'guest' && auth.uid === root.child('rooms').child($roomId).child('players').child('guest').child('uid').val()))",
+                  ".write": "auth != null && !root.child('rooms').child($roomId).child('exit').exists() && $round === root.child('rooms').child($roomId).child('match').child('currentRound').val() && !data.exists() && root.child('rooms').child($roomId).child('match').child('rounds').child($round).child('supportReveals').hasChildren(['host','guest']) && newData.isString() && newData.val().matches(/^[0-9a-f]{64}$/) && root.child('rooms').child($roomId).child('match').child('teams').child('host').exists() && root.child('rooms').child($roomId).child('match').child('teams').child('guest').exists() && (($role === 'host' && auth.uid === root.child('rooms').child($roomId).child('hostUid').val()) || ($role === 'guest' && auth.uid === root.child('rooms').child($roomId).child('players').child('guest').child('uid').val()))",
                   ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f]{64}$/)"
                 }
               },
               "actionReveals": {
                 "$role": {
                   ".write": "auth != null && !root.child('rooms').child($roomId).child('exit').exists() && $round === root.child('rooms').child($roomId).child('match').child('currentRound').val() && !data.exists() && root.child('rooms').child($roomId).child('match').child('rounds').child($round).child('actionCommits').hasChildren(['host','guest']) && (($role === 'host' && auth.uid === root.child('rooms').child($roomId).child('hostUid').val()) || ($role === 'guest' && auth.uid === root.child('rooms').child($roomId).child('players').child('guest').child('uid').val()))",
-                  ".validate": "newData.hasChildren(['hand','supportId','supportDefinitionId','seed','nonce']) && (newData.child('hand').val() === 'rock' || newData.child('hand').val() === 'scissors' || newData.child('hand').val() === 'paper') && newData.child('supportId').isString() && newData.child('supportId').val().matches(/^$|^[A-Za-z0-9_-]{1,40}$/) && newData.child('supportDefinitionId').isString() && newData.child('supportDefinitionId').val().matches(/^$|^(n|r)-[a-z0-9-]{3,40}$/) && newData.child('seed').isString() && newData.child('seed').val().matches(/^[0-9a-f]{64}$/) && newData.child('nonce').isString() && newData.child('nonce').val().matches(/^[0-9a-f]{64}$/)"
+                  ".validate": "newData.hasChildren(['hand','seed','nonce']) && (newData.child('hand').val() === 'rock' || newData.child('hand').val() === 'scissors' || newData.child('hand').val() === 'paper') && newData.child('seed').isString() && newData.child('seed').val().matches(/^[0-9a-f]{64}$/) && newData.child('nonce').isString() && newData.child('nonce').val().matches(/^[0-9a-f]{64}$/)"
                 }
               },
               "rerolls": {
                 "$role": {
-                  ".write": "auth != null && !root.child('rooms').child($roomId).child('exit').exists() && $round === root.child('rooms').child($roomId).child('match').child('currentRound').val() && !data.exists() && newData.isBoolean() && root.child('rooms').child($roomId).child('match').child('rounds').child($round).child('actionReveals').hasChildren(['host','guest']) && (($role === 'host' && auth.uid === root.child('rooms').child($roomId).child('hostUid').val()) || ($role === 'guest' && auth.uid === root.child('rooms').child($roomId).child('players').child('guest').child('uid').val()))",
+                  ".write": "auth != null && !root.child('rooms').child($roomId).child('exit').exists() && $round === root.child('rooms').child($roomId).child('match').child('currentRound').val() && !data.exists() && root.child('rooms').child($roomId).child('match').child('rounds').child($round).child('actionReveals').hasChildren(['host','guest']) && newData.isBoolean() && (($role === 'host' && auth.uid === root.child('rooms').child($roomId).child('hostUid').val()) || ($role === 'guest' && auth.uid === root.child('rooms').child($roomId).child('players').child('guest').child('uid').val()))",
                   ".validate": "newData.isBoolean()"
                 }
               },
@@ -111,6 +111,18 @@
                 "$role": {
                   ".write": "auth != null && !root.child('rooms').child($roomId).child('exit').exists() && $round === root.child('rooms').child($roomId).child('match').child('currentRound').val() && !data.exists() && newData.val() === true && root.child('rooms').child($roomId).child('match').child('rounds').child($round).child('resultClaims').hasChildren(['host','guest']) && root.child('rooms').child($roomId).child('match').child('rounds').child($round).child('resultClaims').child('host').child('hash').val() === root.child('rooms').child($roomId).child('match').child('rounds').child($round).child('resultClaims').child('guest').child('hash').val() && (($role === 'host' && auth.uid === root.child('rooms').child($roomId).child('hostUid').val()) || ($role === 'guest' && auth.uid === root.child('rooms').child($roomId).child('players').child('guest').child('uid').val()))",
                   ".validate": "newData.val() === true"
+                }
+              },
+              "supportCommits": {
+                "$role": {
+                  ".write": "auth != null && !root.child('rooms').child($roomId).child('exit').exists() && $round === root.child('rooms').child($roomId).child('match').child('currentRound').val() && !data.exists() && newData.isString() && newData.val().matches(/^[0-9a-f]{64}$/) && root.child('rooms').child($roomId).child('match').child('teams').child('host').exists() && root.child('rooms').child($roomId).child('match').child('teams').child('guest').exists() && (($role === 'host' && auth.uid === root.child('rooms').child($roomId).child('hostUid').val()) || ($role === 'guest' && auth.uid === root.child('rooms').child($roomId).child('players').child('guest').child('uid').val()))",
+                  ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f]{64}$/)"
+                }
+              },
+              "supportReveals": {
+                "$role": {
+                  ".write": "auth != null && !root.child('rooms').child($roomId).child('exit').exists() && $round === root.child('rooms').child($roomId).child('match').child('currentRound').val() && !data.exists() && root.child('rooms').child($roomId).child('match').child('rounds').child($round).child('supportCommits').hasChildren(['host','guest']) && (($role === 'host' && auth.uid === root.child('rooms').child($roomId).child('hostUid').val()) || ($role === 'guest' && auth.uid === root.child('rooms').child($roomId).child('players').child('guest').child('uid').val()))",
+                  ".validate": "newData.hasChildren(['supportId','supportDefinitionId','nonce']) && newData.child('supportId').isString() && newData.child('supportDefinitionId').isString() && newData.child('nonce').isString() && newData.child('nonce').val().matches(/^[0-9a-f]{64}$/) && ((newData.child('supportId').val() === '' && newData.child('supportDefinitionId').val() === '') || (newData.child('supportId').val().matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.child('supportDefinitionId').val().matches(/^(n|r)-[a-z0-9-]{3,40}$/)))"
                 }
               }
             }

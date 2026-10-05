@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=friend-test-online-battle-1">
+  <link rel="stylesheet" href="style.css?v=friend-test-online-phases-2">
 </head>
 <body>
   <div class="app-shell">
@@ -148,13 +148,14 @@
         <div class="battle-titlebar"><div><p class="eyebrow">BATTLE PHASE <span>— NORMAL + RARE</span></p><h1 id="battleHeading">CPU <em>バトル</em></h1><p id="onlineBattleStatus" class="online-battle-status" aria-live="polite"></p></div><div class="round-badge"><small>NOW PLAYING</small><b id="roundNumber">ROUND 1</b></div><button id="battleBackButton" class="secondary-button">編成に戻る</button></div>
         <div class="battle-arena"><div id="playerBattlePanel"></div><div class="arena-center"><span class="arena-vs">VS</span><div id="roundReveal"></div></div><div id="cpuBattlePanel"></div></div>
         <section id="battleControls" class="battle-controls">
-          <div id="supportControls" class="support-controls"><div class="choice-heading"><span class="panel-kicker">ROUND START — SUPPORT</span><h2>サポートカードを選ぶ</h2><p>このラウンドに1枚使用するか、使わずに進みます。</p></div><div id="supportChoiceList" class="support-choice-list"></div><div id="supportPreview" class="support-preview">サポートを選ぶと効果が表示されます。</div><div class="support-actions"><button id="useSupportButton" class="primary-button" disabled>このサポートを使用 <span>→</span></button><button id="skipSupportButton" class="secondary-button">サポートを使わない</button></div></div>
+          <div id="supportControls" class="support-controls"><div class="choice-heading"><span class="panel-kicker">ROUND START — SUPPORT</span><h2>サポートカードを選ぶ</h2><p>このラウンドに1枚使用するか、使わずに進みます。確定後は両者の選択が揃うまで内容は公開されません。</p></div><div id="supportChoiceList" class="support-choice-list"></div><div id="supportPreview" class="support-preview">サポートを選ぶと効果が表示されます。</div><div class="support-actions"><button id="useSupportButton" class="primary-button" disabled>このサポートを使用 <span>→</span></button><button id="skipSupportButton" class="secondary-button">サポートを使わない</button></div></div>
+          <div id="onlineSupportReveal" class="online-support-reveal" hidden aria-live="polite"></div>
           <div id="handControls" class="hand-controls" hidden><div class="choice-heading"><span class="panel-kicker">CHOOSE YOUR HAND</span><h2>じゃんけんの手を選ぶ</h2><p id="handChoiceHelp">CPUの手は確定するまで表示されません。</p></div><div class="hand-buttons"><button class="hand-button hand-rock" data-hand="rock"><span>✊</span><b>グー</b><small>赤属性</small></button><button class="hand-button hand-scissors" data-hand="scissors"><span>✌</span><b>チョキ</b><small>緑属性</small></button><button class="hand-button hand-paper" data-hand="paper"><span>✋</span><b>パー</b><small>青属性</small></button></div></div>
           <div id="diceControls" class="dice-controls" hidden><div class="choice-heading"><span class="panel-kicker">RAW DICE — REROLL</span><h2>生ダイスを確定する</h2><p id="diceChoiceSummary"></p></div><div class="dice-actions"><button id="rerollButton" class="secondary-button">振り直す</button><button id="keepDieButton" class="primary-button">この出目を使う <span>→</span></button></div></div>
           <div id="reviveControls" class="revive-controls" hidden><div class="choice-heading"><span class="panel-kicker">GRAVEYARD — REVIVE</span><h2>復活するカードを選ぶ</h2><p id="reviveInstruction">選んだカードは最大HPの50%で元のバトル枠に戻ります。</p></div><div id="reviveChoiceList" class="revive-choice-list"></div></div>
           <div id="nextRoundControls" class="next-round-controls" hidden><button id="nextRoundButton" class="primary-button next-round">次のラウンドへ <span>→</span></button></div>
         </section>
-        <section id="battleResult" class="battle-result" hidden><div class="result-card"><span class="panel-kicker">BATTLE RESULT</span><strong id="resultWord">WIN</strong><p id="resultMessage"></p><div class="rematch-actions"><button id="randomPlayerAgainButton" class="primary-button">もう一度ランダム対戦 <span>↻</span></button><button id="sameCpuAgainButton" class="secondary-button">同じ相手と再戦</button><button id="newCpuAgainButton" class="secondary-button">新しい相手と編成はそのまま</button><button id="againButton" class="secondary-button">今のデッキを編成し直す</button></div></div></section>
+        <section id="battleResult" class="battle-result" hidden><div class="result-card"><span class="panel-kicker">BATTLE RESULT</span><strong id="resultWord">WIN</strong><p id="resultMessage"></p><div id="cpuRematchActions" class="rematch-actions"><button id="randomPlayerAgainButton" class="primary-button">もう一度ランダム対戦 <span>↻</span></button><button id="sameCpuAgainButton" class="secondary-button">同じ相手と再戦</button><button id="newCpuAgainButton" class="secondary-button">新しい相手と編成はそのまま</button><button id="againButton" class="secondary-button">今のデッキを編成し直す</button></div><button id="onlineExitResultButton" class="primary-button online-exit-result" hidden>ルームを退出</button></div></section>
         <section class="battle-log-section"><div class="log-heading"><div><span class="panel-kicker">MATCH HISTORY</span><h2>ラウンドログ <small id="logCount">計算過程を記録</small></h2></div><span class="log-indicator"><i></i> LIVE</span></div><div id="battleLog" class="battle-log"><p class="log-empty">ラウンド結果はここに表示されます。</p></div></section>
       </section>
     </main>
@@ -172,9 +173,9 @@
   <script src="cpu-deck.js"></script>
   <script src="dev-card-pool.js"></script>
   <script src="battle.js"></script>
-  <script src="game.js?v=friend-test-online-battle-1"></script>
+  <script src="game.js?v=friend-test-online-phases-2"></script>
   <script src="online-schema.js?v=friend-test-room-exit-2"></script>
-  <script src="online-battle-core.js?v=friend-test-online-battle-1"></script>
-  <script type="module" src="online.js?v=friend-test-online-battle-1"></script>
+  <script src="online-battle-core.js?v=friend-test-online-phases-2"></script>
+  <script type="module" src="online.js?v=friend-test-online-phases-2"></script>
 </body>
 </html>
