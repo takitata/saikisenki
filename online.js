@@ -75,6 +75,8 @@ import {
     return credential.user;
   }
   function roomPath(roomId) { return `rooms/${roomId}`; }
+  function roleContext(room = currentRoom) { return core.roleContext(room?.role); }
+  function myRole(room = currentRoom) { return roleContext(room).myRole; }
   function saveLocalRoom(roomId, role, uid) {
     try { sessionStorage.setItem("saikisenki-online-room", JSON.stringify({ roomId, role, uid })); } catch {}
   }
@@ -88,15 +90,16 @@ import {
     els.actions.hidden = true;
     els.roomId.textContent = currentRoom.roomId;
     els.roomMessage.textContent = paired ? "接続しました" : "対戦相手を待っています";
-    const otherRole = currentRoom.role === "host" ? "guest" : "host";
+    const { myRole, opponentRole } = roleContext();
+    const otherRole = opponentRole;
     const otherConnected = room.presence?.[otherRole]?.connected === true;
     els.opponent.innerHTML = paired
       ? (otherConnected
         ? '<i class="live-dot"></i>対戦相手が参加しました'
         : '<i class="waiting-dot"></i>対戦相手が切断中です…')
       : '<i class="waiting-dot"></i>対戦相手を待っています';
-    els.newRoom.hidden = !(currentRoom.role === "host" && !paired && room.status === "waiting");
-    if (paired && currentRoom.role === "host" && room.status === "waiting" && !statusWriteRequested) {
+    els.newRoom.hidden = !(myRole === "host" && !paired && room.status === "waiting");
+    if (paired && myRole === "host" && room.status === "waiting" && !statusWriteRequested) {
       statusWriteRequested = true;
       set(ref(db, `${roomPath(currentRoom.roomId)}/status`), "paired").catch(error => { statusWriteRequested = false; showError(errorText(error)); });
     }
@@ -105,9 +108,10 @@ import {
   function privatePath(roomId, uid) { return `privateRoomData/${roomId}/${uid}`; }
   function battlePath(roomId) { return `${roomPath(roomId)}/match`; }
   function roundPath(roomId, round) { return `${battlePath(roomId)}/rounds/${round}`; }
+  function roundRolePath(roomId, round, collection, role = myRole()) { return core.roleChildPath(`${roundPath(roomId, round)}/${collection}`, role); }
   function activeOnlineRound() { return Number(battleStateCache.currentRound || core.nextRoundNumber(battleStateCache) || 1); }
-  function roleUid(room, role) { return role === "host" ? room.hostUid : room.players?.guest?.uid; }
-  function otherRole(role) { return role === "host" ? "guest" : "host"; }
+  function roleUid(room, role) { const fixedRole = core.roleContext(role).myRole; return fixedRole === "host" ? room.hostUid : room.players?.guest?.uid; }
+  function otherRole(role) { return core.roleContext(role).opponentRole; }
   function secretKey(roomId, round) { return `saikisenki-online-round-secret:${roomId}:${round}`; }
   function supportSecretKey(roomId, round) { return `${secretKey(roomId, round)}:support`; }
   function supportDraftKey(roomId, round) { return `${secretKey(roomId, round)}:support-draft`; }
@@ -119,7 +123,7 @@ import {
   function setBattleStatus(message, match = onlineBattleMatch, start = false, supportState = null) {
     onlineBattleMatch = match;
     if (!window.CPUOnlineBattleUI || !match) return;
-    const opponent = currentRoom && currentRoomState?.presence?.[otherRole(currentRoom.role)];
+    const opponent = currentRoom && currentRoomState?.presence?.[roleContext().opponentRole];
     const connectionMessage = opponent && opponent.connected === false ? " · 対戦相手が切断中です…再接続を待っています" : "";
     const controller = onlineBattleController || { exit: exitRoom };
     if (start) window.CPUOnlineBattleUI.start(match, controller, `${message}${connectionMessage}`, supportState);
@@ -127,7 +131,7 @@ import {
   }
   async function ensureOwnTeamManifest(room) {
     if (!currentRoom || !onlineDeal || !onlineFormation?.ready) return;
-    const teamRef = ref(db, `${battlePath(currentRoom.roomId)}/teams/${currentRoom.role}`);
+    const teamRef = ref(db, `${battlePath(currentRoom.roomId)}/teams/${myRole()}`);
     const battle = onlineFormation.battleInstanceIds.map(instanceId => {
       const owned = onlineDeal.cards.find(item => item.instanceId === instanceId);
       return owned ? { instanceId: owned.instanceId, definitionId: owned.definitionId } : null;
@@ -153,7 +157,7 @@ import {
   function revivePair(roundData, role) { return { player: roundData?.revives?.[role] || null, cpu: roundData?.revives?.[otherRole(role)] || null }; }
   function ownedForDeal(deal) { return (deal?.cards || []).map(item => ({ instanceId: item.instanceId, definitionId: item.definitionId })); }
   function buildBattleBase(room) {
-    const role = currentRoom.role;
+    const role = myRole();
     const ownFormation = onlineFormation;
     const ownDeal = onlineDeal;
     const opponent = room.match?.teams?.[otherRole(role)];
@@ -167,7 +171,7 @@ import {
     });
   }
   function pendingStatus(room, roundData, match) {
-    const role = currentRoom.role;
+    const role = myRole();
     const phase = core.phaseFor(roundData, role);
     if (phase === "supportSelect") return "サポートを選択して確定してください";
     if (phase === "supportSelectAfterOpponent") return "相手はサポート確定済み · あなたの選択を待っています";
@@ -196,7 +200,7 @@ import {
   }
   async function replayBattle(room) {
     if (!currentRoom || !onlineDeal || !onlineFormation?.ready || !room.match?.teams?.host || !room.match?.teams?.guest) return;
-    const role = currentRoom.role;
+    const role = myRole();
     let match = buildBattleBase(room);
     if (!match) return;
     const rounds = room.match.rounds || {};
@@ -211,8 +215,10 @@ import {
       if (!(await core.verifySupportReveal(roundNo, "host", hostSupport, saved.supportCommits?.host)) || !(await core.verifySupportReveal(roundNo, "guest", guestSupport, saved.supportCommits?.guest))) throw new Error(`ROUND ${roundNo} のサポートcommit-reveal検証に失敗しました。`);
       if (!(await core.verifyReveal(roundNo, "host", host, saved.actionCommits?.host)) || !(await core.verifyReveal(roundNo, "guest", guest, saved.actionCommits?.guest))) throw new Error(`ROUND ${roundNo} のcommit-reveal検証に失敗しました。`);
       const dice = await core.deriveDice(currentRoom.roomId, roundNo, host.seed, guest.seed);
-      const ownChoice = { ...(role === "host" ? host : guest), supportChoice: role === "host" ? hostSupport : guestSupport };
-      const opponentChoice = { ...(role === "host" ? guest : host), supportChoice: role === "host" ? guestSupport : hostSupport };
+      const actions = core.rolePair(saved.actionReveals, role);
+      const supports = core.rolePair(saved.supportReveals, role);
+      const ownChoice = { ...actions.self, supportChoice: supports.self };
+      const opponentChoice = { ...actions.opponent, supportChoice: supports.opponent };
       const current = core.resolveRevealedRound(gameEngine, match, ownChoice, opponentChoice,
         Boolean(saved.rerolls[role]), Boolean(saved.rerolls[otherRole(role)]), dice[role], dice[otherRole(role)], revivePair(saved, role));
       if (current.status === "reviveChoice") throw new Error(`ROUND ${roundNo} の復活選択が確定していません。`);
@@ -229,8 +235,9 @@ import {
       if (!(await core.verifySupportReveal(roundNo, "host", hostSupport, saved.supportCommits?.host)) || !(await core.verifySupportReveal(roundNo, "guest", guestSupport, saved.supportCommits?.guest))) throw new Error(`ROUND ${roundNo} のサポートcommit-reveal検証に失敗しました。`);
       const ownSealed = Boolean(match.supportLockNextRound.player);
       const opponentSealed = Boolean(match.supportLockNextRound.cpu);
-      core.prepareSupportPhase(gameEngine, match, saved.supportReveals[role], saved.supportReveals[otherRole(role)]);
-      window.CPUOnlineBattleUI?.setPublicSupports({ own: saved.supportReveals[role], opponent: saved.supportReveals[otherRole(role)], ownSealed, opponentSealed });
+      const supports = core.rolePair(saved.supportReveals, role);
+      core.prepareSupportPhase(gameEngine, match, supports.self, supports.opponent);
+      window.CPUOnlineBattleUI?.setPublicSupports({ own: supports.self, opponent: supports.opponent, ownSealed, opponentSealed });
     } else {
       window.CPUOnlineBattleUI?.setPublicSupports(null);
     }
@@ -241,8 +248,10 @@ import {
       if (!(await core.verifySupportReveal(roundNo, "host", hostSupport, saved.supportCommits?.host)) || !(await core.verifySupportReveal(roundNo, "guest", guestSupport, saved.supportCommits?.guest))) throw new Error(`ROUND ${roundNo} のサポートcommit-reveal検証に失敗しました。`);
       if (!(await core.verifyReveal(roundNo, "host", host, saved.actionCommits?.host)) || !(await core.verifyReveal(roundNo, "guest", guest, saved.actionCommits?.guest))) throw new Error(`ROUND ${roundNo} のcommit-reveal検証に失敗しました。`);
       const dice = await core.deriveDice(currentRoom.roomId, roundNo, host.seed, guest.seed);
-      const ownChoice = { ...(role === "host" ? host : guest), supportChoice: role === "host" ? hostSupport : guestSupport };
-      const opponentChoice = { ...(role === "host" ? guest : host), supportChoice: role === "host" ? guestSupport : hostSupport };
+      const actions = core.rolePair(saved.actionReveals, role);
+      const supports = core.rolePair(saved.supportReveals, role);
+      const ownChoice = { ...actions.self, supportChoice: supports.self };
+      const opponentChoice = { ...actions.opponent, supportChoice: supports.opponent };
       core.beginRevealedRound(gameEngine, match, ownChoice, opponentChoice, dice[role], dice[otherRole(role)]);
       if (saved.rerolls?.host !== undefined && saved.rerolls?.guest !== undefined) {
         match = core.finishRevealedRound(gameEngine, match,
@@ -253,7 +262,7 @@ import {
         }
         if (match.status === "roundResolved") {
           const resultHash = await core.hashSnapshot(core.snapshot(match, role));
-          if (!saved.resultClaims?.[role]) await writeOnce(`${roundPath(currentRoom.roomId, roundNo)}/resultClaims/${role}`, { hash: resultHash });
+          if (!saved.resultClaims?.[role]) await writeOnce(roundRolePath(currentRoom.roomId, roundNo, "resultClaims", role), { hash: resultHash }, { roomId:currentRoom.roomId, round:roundNo, myRole:role });
           if (core.isSettledRound(saved) && (saved.resultClaims.host.hash !== resultHash || saved.resultClaims.guest.hash !== resultHash)) throw new Error(`ROUND ${roundNo} の結果ハッシュが一致しません。`);
         }
       }
@@ -267,14 +276,20 @@ import {
     else setBattleStatus(status, match, true, supportState);
     window.CPUOnlineBattleUI?.setSupport(localDraft.supportId || "");
     if (match.status === "diceChoice" && !match.pendingRound.playerData.rerollAvailable && saved.rerolls?.[role] === undefined) {
-      await writeOnce(`${roundPath(currentRoom.roomId, roundNo)}/rerolls/${role}`, false);
+      await writeOnce(roundRolePath(currentRoom.roomId, roundNo, "rerolls", role), false, { roomId:currentRoom.roomId, round:roundNo, myRole:role });
     }
   }
-  async function writeOnce(path, value) {
-    const result = await runTransaction(ref(db, path), current => current == null ? value : undefined, { applyLocally: false });
-    if (!result.committed) {
-      const existing = await get(ref(db, path));
-      if (!existing.exists()) throw new Error("オンライン操作を保存できませんでした。");
+  async function writeOnce(path, value, metadata = {}) {
+    try {
+      const result = await runTransaction(ref(db, path), current => current == null ? value : undefined, { applyLocally: false });
+      if (!result.committed) {
+        const existing = await get(ref(db, path));
+        if (!existing.exists()) throw new Error("オンライン操作を保存できませんでした。");
+      }
+    } catch (error) {
+      const details = { roomId:metadata.roomId || currentRoom?.roomId || "unknown", round:metadata.round ?? "unknown", myRole:metadata.myRole || (currentRoom ? myRole() : "unknown"), path, code:error?.code || "", message:error?.message || String(error) };
+      console.error("[Saikisenki online] Firebase write failed", details);
+      throw error;
     }
   }
   function makeBattleController() {
@@ -282,7 +297,8 @@ import {
       async submitSupport(instanceId) {
         if (!currentRoom || !onlineBattleMatch || onlineBattleMatch.status !== "supportSelection") return;
         const round = activeOnlineRound();
-        if (currentRoomState?.match?.rounds?.[String(round)]?.supportCommits?.[currentRoom.role]) return;
+        const { myRole: role } = roleContext();
+        if (currentRoomState?.match?.rounds?.[String(round)]?.supportCommits?.[role]) return;
         const pendingKey = `support:${round}`;
         if (actionSubmittingRound === pendingKey) return;
         actionSubmittingRound = pendingKey;
@@ -292,19 +308,19 @@ import {
         try {
           sessionStorage.setItem(supportDraftKey(currentRoom.roomId, round), JSON.stringify({ supportId: choice.supportId }));
           if (!writeSupportSecret(currentRoom.roomId, round, choice)) throw new Error("サポート選択をこのブラウザーに一時保存できませんでした。");
-          window.CPUOnlineBattleUI?.setSupportPhaseState(core.supportPhaseState(currentRoomState?.match?.rounds?.[String(round)] || {}, currentRoom.role, sealed, choice.supportId, true));
+          window.CPUOnlineBattleUI?.setSupportPhaseState(core.supportPhaseState(currentRoomState?.match?.rounds?.[String(round)] || {}, role, sealed, choice.supportId, true));
           setBattleStatus("サポート確定を送信しています…", onlineBattleMatch);
-          const commitment = await core.createSupportCommitment(round, currentRoom.role, choice);
-          await writeOnce(`${roundPath(currentRoom.roomId, round)}/supportCommits/${currentRoom.role}`, commitment);
+          const commitment = await core.createSupportCommitment(round, role, choice);
+          await writeOnce(roundRolePath(currentRoom.roomId, round, "supportCommits", role), commitment, { roomId:currentRoom.roomId, round, myRole:role });
           actionSubmittingRound = null;
           const latest = currentRoomState?.match?.rounds?.[String(round)] || {};
-          const committedRound = { ...latest, supportCommits: { ...(latest.supportCommits || {}), [currentRoom.role]: commitment } };
-          window.CPUOnlineBattleUI?.setSupportPhaseState(core.supportPhaseState(committedRound, currentRoom.role, sealed, choice.supportId));
+          const committedRound = { ...latest, supportCommits: { ...(latest.supportCommits || {}), [role]: commitment } };
+          window.CPUOnlineBattleUI?.setSupportPhaseState(core.supportPhaseState(committedRound, role, sealed, choice.supportId));
           setBattleStatus("サポート確定済み · 相手のサポート選択を待っています", onlineBattleMatch);
         } catch (error) {
           actionSubmittingRound = null;
           const latest = currentRoomState?.match?.rounds?.[String(round)] || {};
-          window.CPUOnlineBattleUI?.setSupportPhaseState(core.supportPhaseState(latest, currentRoom.role, Boolean(onlineBattleMatch?.supportLockNextRound.player), choice.supportId));
+          window.CPUOnlineBattleUI?.setSupportPhaseState(core.supportPhaseState(latest, role, Boolean(onlineBattleMatch?.supportLockNextRound.player), choice.supportId));
           throw error;
         }
       },
@@ -312,31 +328,35 @@ import {
         if (!currentRoom || !onlineBattleMatch || onlineBattleMatch.status !== "handChoice") return;
         const round = activeOnlineRound();
         const roundData = currentRoomState?.match?.rounds?.[String(round)] || {};
-        if (!roundData.supportReveals?.host || !roundData.supportReveals?.guest || roundData.actionCommits?.[currentRoom.role]) return;
+        const { myRole: role } = roleContext();
+        if (!roundData.supportReveals?.host || !roundData.supportReveals?.guest || roundData.actionCommits?.[role]) return;
         if (actionSubmittingRound === round) return;
         actionSubmittingRound = round;
         const choice = { hand, seed: core.randomHex(), nonce: core.randomHex() };
         try {
           if (!writeSecret(currentRoom.roomId, round, choice)) throw new Error("このブラウザで選択を一時保存できませんでした。ブラウザのストレージ設定を確認してください。");
           setBattleStatus("じゃんけん確定済み · 相手の選択を待っています", onlineBattleMatch);
-          const commitment = await core.createCommitment(round, currentRoom.role, choice);
-          await writeOnce(`${roundPath(currentRoom.roomId, round)}/actionCommits/${currentRoom.role}`, commitment);
+          const commitment = await core.createCommitment(round, role, choice);
+          await writeOnce(roundRolePath(currentRoom.roomId, round, "actionCommits", role), commitment, { roomId:currentRoom.roomId, round, myRole:role });
           onlineBattleMatch.status = "handChoice";
           setBattleStatus("じゃんけん確定済み · 相手の選択を待っています", onlineBattleMatch);
         } catch (error) { actionSubmittingRound = null; throw error; }
       },
       async submitReroll(value) {
         const round = activeOnlineRound();
-        await writeOnce(`${roundPath(currentRoom.roomId, round)}/rerolls/${currentRoom.role}`, Boolean(value));
+        const { myRole: role } = roleContext();
+        await writeOnce(roundRolePath(currentRoom.roomId, round, "rerolls", role), Boolean(value), { roomId:currentRoom.roomId, round, myRole:role });
       },
       async submitRevive(instanceId) {
         const round = activeOnlineRound();
-        await writeOnce(`${roundPath(currentRoom.roomId, round)}/revives/${currentRoom.role}`, instanceId);
+        const { myRole: role } = roleContext();
+        await writeOnce(roundRolePath(currentRoom.roomId, round, "revives", role), instanceId, { roomId:currentRoom.roomId, round, myRole:role });
       },
       async nextRound() {
         if (!currentRoom) return;
         const round = activeOnlineRound();
-        await writeOnce(`${roundPath(currentRoom.roomId, round)}/nextReady/${currentRoom.role}`, true);
+        const { myRole: role } = roleContext();
+        await writeOnce(roundRolePath(currentRoom.roomId, round, "nextReady", role), true, { roomId:currentRoom.roomId, round, myRole:role });
       },
       exit: exitRoom
     };
@@ -353,22 +373,31 @@ import {
     battleStateCache = room.match;
     const roundNumber = current;
     const round = room.match.rounds?.[String(roundNumber)] || {};
-    const role = currentRoom.role;
-    if (round.supportCommits?.host && round.supportCommits?.guest && !round.supportReveals?.[role]) {
+    const roles = roleContext();
+    const role = roles.myRole;
+    const supportCommits = core.rolePair(round.supportCommits, role);
+    const supportReveals = core.rolePair(round.supportReveals, role);
+    if (supportCommits.self && supportCommits.opponent && !supportReveals.self) {
       const secret = readSupportSecret(currentRoom.roomId, roundNumber);
       if (!secret) throw new Error("確定したサポートのローカル復元データがありません。端末のセッションを維持して再接続してください。");
-      await writeOnce(`${roundPath(currentRoom.roomId, roundNumber)}/supportReveals/${role}`, secret);
+      await writeOnce(roundRolePath(currentRoom.roomId, roundNumber, "supportReveals", roles.myRole), secret, { roomId:currentRoom.roomId, round:roundNumber, myRole:roles.myRole });
     }
-    if (round.supportReveals?.host && round.supportReveals?.guest) {
-      if (!(await core.verifySupportReveal(roundNumber, "host", round.supportReveals.host, round.supportCommits?.host)) || !(await core.verifySupportReveal(roundNumber, "guest", round.supportReveals.guest, round.supportCommits?.guest))) throw new Error("サポートcommit-revealが一致しません。ラウンドを停止しました。");
+    const revealedSupports = core.rolePair(round.supportReveals, role);
+    if (revealedSupports.self && revealedSupports.opponent) {
+      const commits = core.rolePair(round.supportCommits, role);
+      if (!(await core.verifySupportReveal(roundNumber, role, revealedSupports.self, commits.self)) || !(await core.verifySupportReveal(roundNumber, roles.opponentRole, revealedSupports.opponent, commits.opponent))) throw new Error("サポートcommit-revealが一致しません。ラウンドを停止しました。");
     }
-    if (round.supportReveals?.host && round.supportReveals?.guest && round.actionCommits?.host && round.actionCommits?.guest && !round.actionReveals?.[role]) {
+    const actionCommits = core.rolePair(round.actionCommits, role);
+    const actionReveals = core.rolePair(round.actionReveals, role);
+    if (revealedSupports.self && revealedSupports.opponent && actionCommits.self && actionCommits.opponent && !actionReveals.self) {
       const secret = readSecret(currentRoom.roomId, roundNumber);
       if (!secret) throw new Error("確定したじゃんけんのローカル復元データがありません。端末のセッションを維持して再接続してください。");
-      await writeOnce(`${roundPath(currentRoom.roomId, roundNumber)}/actionReveals/${role}`, secret);
+      await writeOnce(roundRolePath(currentRoom.roomId, roundNumber, "actionReveals", roles.myRole), secret, { roomId:currentRoom.roomId, round:roundNumber, myRole:roles.myRole });
     }
-    if (round.actionReveals?.host && round.actionReveals?.guest) {
-      if (!(await core.verifyReveal(roundNumber, "host", round.actionReveals.host, round.actionCommits?.host)) || !(await core.verifyReveal(roundNumber, "guest", round.actionReveals.guest, round.actionCommits?.guest))) throw new Error("じゃんけんcommit-revealが一致しません。ラウンドを停止しました。");
+    const revealedActions = core.rolePair(round.actionReveals, role);
+    if (revealedActions.self && revealedActions.opponent) {
+      const commits = core.rolePair(round.actionCommits, role);
+      if (!(await core.verifyReveal(roundNumber, role, revealedActions.self, commits.self)) || !(await core.verifyReveal(roundNumber, roles.opponentRole, revealedActions.opponent, commits.opponent))) throw new Error("じゃんけんcommit-revealが一致しません。ラウンドを停止しました。");
     }
     if (round.resultClaims?.host?.hash && round.resultClaims?.guest?.hash && round.resultClaims.host.hash !== round.resultClaims.guest.hash) throw new Error("両端末で計算したラウンド結果が一致しません。同期を停止しました。");
     await replayBattle(room);
@@ -387,9 +416,9 @@ import {
     els.cards.innerHTML = onlineDeal.cards.map(owned => window.CPUFormationUI.renderCard(
       { instanceId: owned.instanceId, cardId: owned.definitionId }, onlineBattleIds, { locked, showRole: true }
     )).join("");
-    const meReady = Boolean(room.players?.[currentRoom.role]?.ready);
-    const otherRole = currentRoom.role === "host" ? "guest" : "host";
-    const otherReady = Boolean(room.players?.[otherRole]?.ready);
+    const { myRole: role, opponentRole } = roleContext();
+    const meReady = Boolean(room.players?.[role]?.ready);
+    const otherReady = Boolean(room.players?.[opponentRole]?.ready);
     els.readyStatus.innerHTML = `<p class="${meReady ? "is-ready" : ""}">あなた：${meReady ? "準備完了" : "編成中…"}</p><p class="${otherReady ? "is-ready" : ""}">相手：${otherReady ? "準備完了" : "編成中…"}</p>${meReady && otherReady ? "<p class=\"is-ready\">両者の編成が完了しました — 対戦準備完了</p>" : ""}`;
     els.formationError.textContent = "";
   }
@@ -465,7 +494,9 @@ import {
   }
   function listenRoom(roomId, role) {
     if (roomUnsubscribe) roomUnsubscribe();
-    currentRoom = { roomId, role };
+    const fixedRole = core.roleContext(role).myRole;
+    currentRoom = { roomId, role: fixedRole };
+    console.info("[Saikisenki online] room role restored", { roomId, myRole:fixedRole, opponentRole:core.roleContext(fixedRole).opponentRole });
     statusWriteRequested = false;
     els.roomId.textContent = roomId;
     els.roomPanel.hidden = false;
@@ -478,6 +509,17 @@ import {
         return;
       }
       const room = snapshot.val();
+      const uid = auth.currentUser?.uid;
+      const firebaseRole = core.roleForUid(room, uid);
+      if (!firebaseRole) {
+        showError("このFirebaseユーザーはルーム参加者として登録されていません。");
+        return;
+      }
+      if (currentRoom.role !== firebaseRole) {
+        console.warn("[Saikisenki online] corrected stale room role from Firebase identity", { roomId, savedRole:currentRoom.role, myRole:firebaseRole });
+        currentRoom = { ...currentRoom, role:firebaseRole };
+        saveLocalRoom(roomId, firebaseRole, uid);
+      }
       if (room.exit) {
         if (room.exit.uid !== auth.currentUser?.uid) handleOpponentExit();
         return;
@@ -489,7 +531,7 @@ import {
     }, error => showError(errorText(error)));
     roomUnsubscribe = () => off(root, "value", roomHandler);
 
-    const presenceRole = role === "host" ? "host" : "guest";
+    const presenceRole = core.roleContext(role).myRole;
     presenceRef = ref(db, `${roomPath(roomId)}/presence/${presenceRole}`);
     syncPresence();
   }
@@ -637,7 +679,7 @@ import {
     handlingOpponentExit = false;
   }
   async function createNewWaitingRoom() {
-    if (!currentRoom || currentRoom.role !== "host") return;
+    if (!currentRoom || myRole() !== "host") return;
     showError();
     els.newRoom.disabled = true;
     try {
@@ -709,7 +751,7 @@ import {
       const uid = auth.currentUser.uid;
       const updates = {};
       updates[`${privatePath(currentRoom.roomId, uid)}/formation`] = formation;
-      updates[`${roomPath(currentRoom.roomId)}/players/${currentRoom.role}/ready`] = true;
+      updates[`${roomPath(currentRoom.roomId)}/players/${myRole()}/ready`] = true;
       await update(ref(db), updates);
       onlineFormation = formation;
       const snapshot = await get(ref(db, roomPath(currentRoom.roomId)));

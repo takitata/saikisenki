@@ -136,24 +136,42 @@
   function isSettledRound(round) {
     return Boolean(round?.resultClaims?.host?.hash && round?.resultClaims?.guest?.hash && round.resultClaims.host.hash === round.resultClaims.guest.hash);
   }
+  function roleContext(myRole) {
+    if (myRole !== "host" && myRole !== "guest") throw new Error(`Invalid Firebase role: ${String(myRole)}`);
+    return { myRole, opponentRole: myRole === "host" ? "guest" : "host", battleSelf: "player", battleOpponent: "cpu" };
+  }
+  function rolePair(pair, myRole) {
+    const roles = roleContext(myRole);
+    return { self: pair?.[roles.myRole] ?? null, opponent: pair?.[roles.opponentRole] ?? null };
+  }
+  function roleChildPath(parentPath, myRole) {
+    const roles = roleContext(myRole);
+    return `${String(parentPath).replace(/\/$/, "")}/${roles.myRole}`;
+  }
+  function roleForUid(room, uid) {
+    if (!uid || !room) return null;
+    if (room.hostUid === uid) return "host";
+    if (room.players?.guest?.uid === uid) return "guest";
+    return null;
+  }
   function phaseFor(roundData = {}, role = "host") {
-    const other = role === "host" ? "guest" : "host";
-    if (!roundData.supportCommits?.[role]) return roundData.supportCommits?.[other] ? "supportSelectAfterOpponent" : "supportSelect";
-    if (!roundData.supportCommits?.[other]) return "supportWait";
+    const { myRole, opponentRole } = roleContext(role);
+    if (!roundData.supportCommits?.[myRole]) return roundData.supportCommits?.[opponentRole] ? "supportSelectAfterOpponent" : "supportSelect";
+    if (!roundData.supportCommits?.[opponentRole]) return "supportWait";
     if (!roundData.supportReveals?.host || !roundData.supportReveals?.guest) return "supportReveal";
-    if (!roundData.actionCommits?.[role]) return "rpsSelect";
-    if (!roundData.actionCommits?.[other]) return "rpsWait";
+    if (!roundData.actionCommits?.[myRole]) return "rpsSelect";
+    if (!roundData.actionCommits?.[opponentRole]) return "rpsWait";
     if (!roundData.actionReveals?.host || !roundData.actionReveals?.guest) return "rpsReveal";
-    if (roundData.rerolls?.[role] === undefined || roundData.rerolls?.[other] === undefined) return "reroll";
+    if (roundData.rerolls?.[myRole] === undefined || roundData.rerolls?.[opponentRole] === undefined) return "reroll";
     if (roundData.resultClaims?.host?.hash && roundData.resultClaims?.guest?.hash && roundData.resultClaims.host.hash !== roundData.resultClaims.guest.hash) return "desync";
     if (!isSettledRound(roundData)) return "resolve";
-    if (!roundData.nextReady?.[role] || !roundData.nextReady?.[other]) return "nextRound";
+    if (!roundData.nextReady?.[myRole] || !roundData.nextReady?.[opponentRole]) return "nextRound";
     return "settled";
   }
   function supportPhaseState(roundData = {}, role = "host", supportSealedByEffect = false, selectedSupportId = "", commitPending = false) {
-    const other = role === "host" ? "guest" : "host";
-    const supportCommitted = Boolean(roundData.supportCommits?.[role]);
-    const opponentCommitted = Boolean(roundData.supportCommits?.[other]);
+    const roles = roleContext(role);
+    const supportCommitted = Boolean(roundData.supportCommits?.[roles.myRole]);
+    const opponentCommitted = Boolean(roundData.supportCommits?.[roles.opponentRole]);
     return {
       supportSelected: Boolean(selectedSupportId),
       supportCommitted,
@@ -215,5 +233,5 @@
     }
     return match;
   }
-  return { stableAction, stableSupport, sha256, createCommitment, createSupportCommitment, verifyReveal, verifySupportReveal, randomHex, deriveDice, rngFor, snapshot, hashSnapshot, isSettledRound, phaseFor, supportPhaseState, nextRoundNumber, makeMatch, prepareSupportPhase, beginRevealedRound, finishRevealedRound, resolveRevealedRound };
+  return { stableAction, stableSupport, sha256, createCommitment, createSupportCommitment, verifyReveal, verifySupportReveal, randomHex, deriveDice, rngFor, snapshot, hashSnapshot, isSettledRound, roleContext, rolePair, roleChildPath, roleForUid, phaseFor, supportPhaseState, nextRoundNumber, makeMatch, prepareSupportPhase, beginRevealedRound, finishRevealedRound, resolveRevealedRound };
 });
