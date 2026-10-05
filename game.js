@@ -412,12 +412,12 @@
   function renderOnlineSupportReveal() {
     const target = $("#onlineSupportReveal");
     if (!onlineBattleMode || !onlinePublicSupports) { target.hidden = true; target.innerHTML = ""; return; }
-    const renderChoice = (label, choice) => {
+    const renderChoice = (label, choice, sealed) => {
       const card = choice?.supportDefinitionId ? byId.get(choice.supportDefinitionId) : null;
-      return `<article class="online-support-reveal-card"><span class="panel-kicker">${label}</span><b>${card ? card.name : "サポートなし"}</b><small>${card ? supportText(card) : "このラウンドはサポートを使用しません。"}</small></article>`;
+      return `<article class="online-support-reveal-card"><span class="panel-kicker">${label}</span><b>${card ? card.name : sealed ? "サポートなし（封印）" : "サポートなし"}</b><small>${card ? supportText(card) : sealed ? "封印術師の効果により、このラウンドはサポートを使用できません。" : "このラウンドはサポートを使用しません。"}</small></article>`;
     };
     target.hidden = false;
-    target.innerHTML = `<div class="online-support-reveal-heading"><span class="panel-kicker">SUPPORT REVEALED</span><strong>両者のサポートが公開されました</strong></div><div class="online-support-reveal-grid">${renderChoice("あなた", onlinePublicSupports.own)}${renderChoice("相手", onlinePublicSupports.opponent)}</div>`;
+    target.innerHTML = `<div class="online-support-reveal-heading"><span class="panel-kicker">SUPPORT REVEALED</span><strong>両者のサポートが公開されました</strong></div><div class="online-support-reveal-grid">${renderChoice("あなた", onlinePublicSupports.own, onlinePublicSupports.ownSealed)}${renderChoice("相手", onlinePublicSupports.opponent, onlinePublicSupports.opponentSealed)}</div>`;
   }
 
   function supportWarning(card) {
@@ -427,7 +427,9 @@
   }
   function renderSupportControls() {
     const cards=match.player.supportCards;
-    const locked=match.supportLockNextRound.player || (onlineBattleMode && onlineBattleStatus.includes("サポート確定済み"));
+    const gameSealed=Boolean(match.supportLockNextRound.player);
+    const supportCommitted=Boolean(onlineBattleMode&&onlineBattleStatus.includes("サポート確定済み"));
+    const locked=gameSealed||supportCommitted;
     const html=cards.map(owned=>{
       const card=byId.get(owned.cardId); const rare=card.rarity!=="normal";
       const selected=owned.instanceId===selectedSupportId;
@@ -436,10 +438,10 @@
     $("#supportChoiceList").innerHTML=html||`<p class="log-empty">使用できるサポートカードがありません。</p>`;
     const selected=cards.find(item=>item.instanceId===selectedSupportId);
     const card=selected?byId.get(selected.cardId):null;
-    $("#supportPreview").innerHTML=(card?`<strong>${card.name}の効果</strong><span>${supportText(card)}</span>${supportWarning(card)}`:"サポートを選ぶと効果が表示されます。")+(locked?`<span class="support-warning">封印術師の能力により、このラウンドはサポートを使用できません。</span>`:"");
-    $("#useSupportButton").disabled=!card||locked||Boolean(onlineBattleMode&&onlineBattleStatus.includes("確定済み"));
-    $("#skipSupportButton").disabled=Boolean(onlineBattleMode&&onlineBattleStatus.includes("サポート確定済み"));
-    $("#skipSupportButton").textContent=locked?"封印中：サポートを使わず進む":"サポートを使わない";
+    $("#supportPreview").innerHTML=(card?`<strong>${card.name}の効果</strong><span>${supportText(card)}</span>${supportWarning(card)}`:"サポートを選ぶと効果が表示されます。")+(gameSealed?`<span class="support-warning">封印術師の能力により、このラウンドはサポートを使用できません。</span>`:supportCommitted?`<span class="support-warning">サポート確定済み · 相手の選択を待っています。</span>`:"");
+    $("#useSupportButton").disabled=!card||locked;
+    $("#skipSupportButton").disabled=supportCommitted;
+    $("#skipSupportButton").textContent=gameSealed?"封印中：サポートなしを確定":supportCommitted?"サポート確定済み":"サポートを使わない";
   }
 
   function renderReviveControls() {

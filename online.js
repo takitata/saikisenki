@@ -226,8 +226,10 @@ import {
     if (!core.isSettledRound(saved) && saved.supportReveals?.host && saved.supportReveals?.guest) {
       const hostSupport = saved.supportReveals.host, guestSupport = saved.supportReveals.guest;
       if (!(await core.verifySupportReveal(roundNo, "host", hostSupport, saved.supportCommits?.host)) || !(await core.verifySupportReveal(roundNo, "guest", guestSupport, saved.supportCommits?.guest))) throw new Error(`ROUND ${roundNo} のサポートcommit-reveal検証に失敗しました。`);
+      const ownSealed = Boolean(match.supportLockNextRound.player);
+      const opponentSealed = Boolean(match.supportLockNextRound.cpu);
       core.prepareSupportPhase(gameEngine, match, saved.supportReveals[role], saved.supportReveals[otherRole(role)]);
-      window.CPUOnlineBattleUI?.setPublicSupports({ own: saved.supportReveals[role], opponent: saved.supportReveals[otherRole(role)] });
+      window.CPUOnlineBattleUI?.setPublicSupports({ own: saved.supportReveals[role], opponent: saved.supportReveals[otherRole(role)], ownSealed, opponentSealed });
     } else {
       window.CPUOnlineBattleUI?.setPublicSupports(null);
     }
@@ -282,7 +284,8 @@ import {
         const pendingKey = `support:${round}`;
         if (actionSubmittingRound === pendingKey) return;
         actionSubmittingRound = pendingKey;
-        const owned = onlineDeal?.cards.find(item => item.instanceId === instanceId);
+        const sealed = Boolean(onlineBattleMatch.supportLockNextRound.player);
+        const owned = sealed ? null : onlineDeal?.cards.find(item => item.instanceId === instanceId);
         const choice = { supportId: owned?.instanceId || "", supportDefinitionId: owned?.definitionId || "", nonce: core.randomHex() };
         try {
           sessionStorage.setItem(supportDraftKey(currentRoom.roomId, round), JSON.stringify({ supportId: choice.supportId }));
