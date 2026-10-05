@@ -1,0 +1,367 @@
+{
+  "study": "sword-saint-vs-fixed-five-v1",
+  "seed": 20261005,
+  "scenariosPerLineup": 5000,
+  "actualMatches": 50000,
+  "rosterConditions": {
+    "bothOwnedCards": 15,
+    "swordSaintTeam": "Battle N / support 15-N; Sword Saint is always a battle card; lineup size fixed at battle start.",
+    "opponent": "Always battle 5 / support 10.",
+    "swordSaintFormalSettings": {
+      "1": {
+        "hp": 250,
+        "damageBonus": 35
+      },
+      "2": {
+        "hp": 200,
+        "damageBonus": 30
+      },
+      "3": {
+        "hp": 165,
+        "damageBonus": 20
+      },
+      "4": {
+        "hp": 145,
+        "damageBonus": 15
+      },
+      "5": {
+        "hp": 115,
+        "damageBonus": 0
+      }
+    },
+    "eachScenarioPlayedWithSubjectOnPlayerAndCpuSides": true
+  },
+  "results": {
+    "1": {
+      "matches": 10000,
+      "wins": 4460,
+      "losses": 5109,
+      "draws": 431,
+      "winRate": 0.446,
+      "avgRounds": 9.2284,
+      "swordSaintAvgDamage": 643.6875,
+      "swordSaintAvgSurvivalRounds": 9.2284,
+      "avgSupportCardsUsedBySwordSaintSide": 6.8129,
+      "avgSupportCardsUnusedBySwordSaintSide": 7.1871,
+      "avgSupportCardsUsedByOpponent": 7.1574,
+      "avgSupportCardsUnusedByOpponent": 2.8426,
+      "avgDistinctOpponentCardsKOd": 4.2459,
+      "swordSaintKOdRate": 0.554,
+      "allFiveOpponentCardsDefeatedRate": 0.446
+    },
+    "2": {
+      "matches": 10000,
+      "wins": 4601,
+      "losses": 5220,
+      "draws": 179,
+      "winRate": 0.4601,
+      "avgRounds": 11.7552,
+      "swordSaintAvgDamage": 525.9,
+      "swordSaintAvgSurvivalRounds": 8.127,
+      "avgSupportCardsUsedBySwordSaintSide": 8.6133,
+      "avgSupportCardsUnusedBySwordSaintSide": 4.3867,
+      "avgSupportCardsUsedByOpponent": 8.4633,
+      "avgSupportCardsUnusedByOpponent": 1.5367,
+      "avgDistinctOpponentCardsKOd": 4.2321,
+      "swordSaintKOdRate": 0.853,
+      "allFiveOpponentCardsDefeatedRate": 0.4601
+    },
+    "3": {
+      "matches": 10000,
+      "wins": 4677,
+      "losses": 5133,
+      "draws": 190,
+      "winRate": 0.4677,
+      "avgRounds": 15.6097,
+      "swordSaintAvgDamage": 394.0845,
+      "swordSaintAvgSurvivalRounds": 7.0755,
+      "avgSupportCardsUsedBySwordSaintSide": 10.4509,
+      "avgSupportCardsUnusedBySwordSaintSide": 1.5491,
+      "avgSupportCardsUsedByOpponent": 9.3639,
+      "avgSupportCardsUnusedByOpponent": 0.6361,
+      "avgDistinctOpponentCardsKOd": 4.2837,
+      "swordSaintKOdRate": 0.9782,
+      "allFiveOpponentCardsDefeatedRate": 0.4677
+    },
+    "4": {
+      "matches": 10000,
+      "wins": 5977,
+      "losses": 3811,
+      "draws": 212,
+      "winRate": 0.5977,
+      "avgRounds": 18.5574,
+      "swordSaintAvgDamage": 321.0785,
+      "swordSaintAvgSurvivalRounds": 6.3092,
+      "avgSupportCardsUsedBySwordSaintSide": 10.5261,
+      "avgSupportCardsUnusedBySwordSaintSide": 0.4739,
+      "avgSupportCardsUsedByOpponent": 9.6203,
+      "avgSupportCardsUnusedByOpponent": 0.3797,
+      "avgDistinctOpponentCardsKOd": 4.5363,
+      "swordSaintKOdRate": 0.9949,
+      "allFiveOpponentCardsDefeatedRate": 0.5977
+    },
+    "5": {
+      "matches": 10000,
+      "wins": 5675,
+      "losses": 4118,
+      "draws": 207,
+      "winRate": 0.5675,
+      "avgRounds": 22.2527,
+      "swordSaintAvgDamage": 188.8055,
+      "swordSaintAvgSurvivalRounds": 5.2703,
+      "avgSupportCardsUsedBySwordSaintSide": 9.824,
+      "avgSupportCardsUnusedBySwordSaintSide": 0.176,
+      "avgSupportCardsUsedByOpponent": 9.8022,
+      "avgSupportCardsUnusedByOpponent": 0.1978,
+      "avgDistinctOpponentCardsKOd": 4.5025,
+      "swordSaintKOdRate": 1,
+      "allFiveOpponentCardsDefeatedRate": 0.5675
+    }
+  },
+  "bySide": {
+    "1": {
+      "player": {
+        "matches": 5000,
+        "wins": 2257,
+        "losses": 2536,
+        "draws": 207,
+        "winRate": 0.4514,
+        "avgRounds": 9.2546,
+        "swordSaintAvgDamage": 645.612,
+        "swordSaintAvgSurvivalRounds": 9.2546,
+        "avgSupportCardsUsedBySwordSaintSide": 6.8446,
+        "avgSupportCardsUnusedBySwordSaintSide": 7.1554,
+        "avgSupportCardsUsedByOpponent": 7.181,
+        "avgSupportCardsUnusedByOpponent": 2.819,
+        "avgDistinctOpponentCardsKOd": 4.2654,
+        "swordSaintKOdRate": 0.5486,
+        "allFiveOpponentCardsDefeatedRate": 0.4514
+      },
+      "cpu": {
+        "matches": 5000,
+        "wins": 2203,
+        "losses": 2573,
+        "draws": 224,
+        "winRate": 0.4406,
+        "avgRounds": 9.2022,
+        "swordSaintAvgDamage": 641.763,
+        "swordSaintAvgSurvivalRounds": 9.2022,
+        "avgSupportCardsUsedBySwordSaintSide": 6.7812,
+        "avgSupportCardsUnusedBySwordSaintSide": 7.2188,
+        "avgSupportCardsUsedByOpponent": 7.1338,
+        "avgSupportCardsUnusedByOpponent": 2.8662,
+        "avgDistinctOpponentCardsKOd": 4.2264,
+        "swordSaintKOdRate": 0.5594,
+        "allFiveOpponentCardsDefeatedRate": 0.4406
+      }
+    },
+    "2": {
+      "player": {
+        "matches": 5000,
+        "wins": 2279,
+        "losses": 2632,
+        "draws": 89,
+        "winRate": 0.4558,
+        "avgRounds": 11.7622,
+        "swordSaintAvgDamage": 524.211,
+        "swordSaintAvgSurvivalRounds": 8.1092,
+        "avgSupportCardsUsedBySwordSaintSide": 8.6114,
+        "avgSupportCardsUnusedBySwordSaintSide": 4.3886,
+        "avgSupportCardsUsedByOpponent": 8.4702,
+        "avgSupportCardsUnusedByOpponent": 1.5298,
+        "avgDistinctOpponentCardsKOd": 4.22,
+        "swordSaintKOdRate": 0.8568,
+        "allFiveOpponentCardsDefeatedRate": 0.4558
+      },
+      "cpu": {
+        "matches": 5000,
+        "wins": 2322,
+        "losses": 2588,
+        "draws": 90,
+        "winRate": 0.4644,
+        "avgRounds": 11.7482,
+        "swordSaintAvgDamage": 527.589,
+        "swordSaintAvgSurvivalRounds": 8.1448,
+        "avgSupportCardsUsedBySwordSaintSide": 8.6152,
+        "avgSupportCardsUnusedBySwordSaintSide": 4.3848,
+        "avgSupportCardsUsedByOpponent": 8.4564,
+        "avgSupportCardsUnusedByOpponent": 1.5436,
+        "avgDistinctOpponentCardsKOd": 4.2442,
+        "swordSaintKOdRate": 0.8492,
+        "allFiveOpponentCardsDefeatedRate": 0.4644
+      }
+    },
+    "3": {
+      "player": {
+        "matches": 5000,
+        "wins": 2335,
+        "losses": 2579,
+        "draws": 86,
+        "winRate": 0.467,
+        "avgRounds": 15.5886,
+        "swordSaintAvgDamage": 394.107,
+        "swordSaintAvgSurvivalRounds": 7.0758,
+        "avgSupportCardsUsedBySwordSaintSide": 10.445,
+        "avgSupportCardsUnusedBySwordSaintSide": 1.555,
+        "avgSupportCardsUsedByOpponent": 9.3692,
+        "avgSupportCardsUnusedByOpponent": 0.6308,
+        "avgDistinctOpponentCardsKOd": 4.2822,
+        "swordSaintKOdRate": 0.9784,
+        "allFiveOpponentCardsDefeatedRate": 0.467
+      },
+      "cpu": {
+        "matches": 5000,
+        "wins": 2342,
+        "losses": 2554,
+        "draws": 104,
+        "winRate": 0.4684,
+        "avgRounds": 15.6308,
+        "swordSaintAvgDamage": 394.062,
+        "swordSaintAvgSurvivalRounds": 7.0752,
+        "avgSupportCardsUsedBySwordSaintSide": 10.4568,
+        "avgSupportCardsUnusedBySwordSaintSide": 1.5432,
+        "avgSupportCardsUsedByOpponent": 9.3586,
+        "avgSupportCardsUnusedByOpponent": 0.6414,
+        "avgDistinctOpponentCardsKOd": 4.2852,
+        "swordSaintKOdRate": 0.978,
+        "allFiveOpponentCardsDefeatedRate": 0.4684
+      }
+    },
+    "4": {
+      "player": {
+        "matches": 5000,
+        "wins": 2993,
+        "losses": 1902,
+        "draws": 105,
+        "winRate": 0.5986,
+        "avgRounds": 18.5942,
+        "swordSaintAvgDamage": 320.284,
+        "swordSaintAvgSurvivalRounds": 6.299,
+        "avgSupportCardsUsedBySwordSaintSide": 10.5452,
+        "avgSupportCardsUnusedBySwordSaintSide": 0.4548,
+        "avgSupportCardsUsedByOpponent": 9.6252,
+        "avgSupportCardsUnusedByOpponent": 0.3748,
+        "avgDistinctOpponentCardsKOd": 4.5394,
+        "swordSaintKOdRate": 0.9962,
+        "allFiveOpponentCardsDefeatedRate": 0.5986
+      },
+      "cpu": {
+        "matches": 5000,
+        "wins": 2984,
+        "losses": 1909,
+        "draws": 107,
+        "winRate": 0.5968,
+        "avgRounds": 18.5206,
+        "swordSaintAvgDamage": 321.873,
+        "swordSaintAvgSurvivalRounds": 6.3194,
+        "avgSupportCardsUsedBySwordSaintSide": 10.507,
+        "avgSupportCardsUnusedBySwordSaintSide": 0.493,
+        "avgSupportCardsUsedByOpponent": 9.6154,
+        "avgSupportCardsUnusedByOpponent": 0.3846,
+        "avgDistinctOpponentCardsKOd": 4.5332,
+        "swordSaintKOdRate": 0.9936,
+        "allFiveOpponentCardsDefeatedRate": 0.5968
+      }
+    },
+    "5": {
+      "player": {
+        "matches": 5000,
+        "wins": 2853,
+        "losses": 2034,
+        "draws": 113,
+        "winRate": 0.5706,
+        "avgRounds": 22.2476,
+        "swordSaintAvgDamage": 189.35,
+        "swordSaintAvgSurvivalRounds": 5.2828,
+        "avgSupportCardsUsedBySwordSaintSide": 9.8282,
+        "avgSupportCardsUnusedBySwordSaintSide": 0.1718,
+        "avgSupportCardsUsedByOpponent": 9.797,
+        "avgSupportCardsUnusedByOpponent": 0.203,
+        "avgDistinctOpponentCardsKOd": 4.5098,
+        "swordSaintKOdRate": 1,
+        "allFiveOpponentCardsDefeatedRate": 0.5706
+      },
+      "cpu": {
+        "matches": 5000,
+        "wins": 2822,
+        "losses": 2084,
+        "draws": 94,
+        "winRate": 0.5644,
+        "avgRounds": 22.2578,
+        "swordSaintAvgDamage": 188.261,
+        "swordSaintAvgSurvivalRounds": 5.2578,
+        "avgSupportCardsUsedBySwordSaintSide": 9.8198,
+        "avgSupportCardsUnusedBySwordSaintSide": 0.1802,
+        "avgSupportCardsUsedByOpponent": 9.8074,
+        "avgSupportCardsUnusedByOpponent": 0.1926,
+        "avgDistinctOpponentCardsKOd": 4.4952,
+        "swordSaintKOdRate": 1,
+        "allFiveOpponentCardsDefeatedRate": 0.5644
+      }
+    }
+  },
+  "opponentComposition": {
+    "1": {
+      "opponentRareBattleCardCountDistribution": {
+        "0": 1729,
+        "1": 2412,
+        "2": 800,
+        "3": 59
+      },
+      "distinctOpponentBattleLineups": 4993,
+      "distinctOpponentOwnedPools": 5000
+    },
+    "2": {
+      "opponentRareBattleCardCountDistribution": {
+        "0": 1798,
+        "1": 2363,
+        "2": 782,
+        "3": 57
+      },
+      "distinctOpponentBattleLineups": 4996,
+      "distinctOpponentOwnedPools": 5000
+    },
+    "3": {
+      "opponentRareBattleCardCountDistribution": {
+        "0": 1753,
+        "1": 2382,
+        "2": 810,
+        "3": 55
+      },
+      "distinctOpponentBattleLineups": 4993,
+      "distinctOpponentOwnedPools": 5000
+    },
+    "4": {
+      "opponentRareBattleCardCountDistribution": {
+        "0": 1678,
+        "1": 2433,
+        "2": 822,
+        "3": 67
+      },
+      "distinctOpponentBattleLineups": 4999,
+      "distinctOpponentOwnedPools": 5000
+    },
+    "5": {
+      "opponentRareBattleCardCountDistribution": {
+        "0": 1672,
+        "1": 2537,
+        "2": 733,
+        "3": 58
+      },
+      "distinctOpponentBattleLineups": 4994,
+      "distinctOpponentOwnedPools": 5000
+    }
+  },
+  "definitions": {
+    "swordSaintAvgSurvivalRounds": "Number of round results where Sword Saint was the active card; this stops when KO, battle ends, or another card becomes active.",
+    "avgDistinctOpponentCardsKOd": "Unique opposing battle-card instances KO’d at least once; revived and re-KO’d cards count once.",
+    "swordSaintKOdRate": "Share of matches where the Sword Saint was KO’d at least once.",
+    "allFiveOpponentCardsDefeatedRate": "Subject-side WIN rate; for one-card lineup this is the frequency the lone Sword Saint defeats all five opponent battle cards."
+  },
+  "limits": [
+    "The current BattleEngine fixes KO successor order cyclically; no user choice is simulated.",
+    "AI choices are heuristic; outcomes are not an optimal-play bound.",
+    "Browser rendering and user-input timing are not simulated.",
+    "Support-use counts are reported separately for the Sword Saint side and opponent."
+  ]
+}

@@ -1,0 +1,2871 @@
+{
+  "study": "rare-count-advantage-fixed-five-v1",
+  "seed": 20261006,
+  "scenariosPerComparison": 2500,
+  "totalPairedScenarios": 25000,
+  "totalMatches": 50000,
+  "conditions": {
+    "ownedCardsPerSide": 15,
+    "battleCardsPerSide": 5,
+    "supportCardsPerSide": 10,
+    "rareCounts": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "sameCount": "Independent random pools with exact same Rare count.",
+    "differentCount": "B deck is constructed from A deck by replacing only (B count − A count) Normal cards with new Rare identities; the common cards are identical.",
+    "mirroredSideOrder": true,
+    "duplicatePolicy": "No duplicates within a pool; identities are sampled broadly and Rare identities are randomized. This avoids any single repeated card dominating."
+  },
+  "overallByRareCount": {
+    "2": {
+      "teamAppearances": 25000,
+      "wins": 10000,
+      "losses": 14467,
+      "draws": 533,
+      "winRate": 0.4,
+      "avgRounds": 22.12332,
+      "avgRareBattleCards": 1.0692,
+      "avgRareSupportCards": 0.9308,
+      "avgRareSupportCardsUsed": 0.92992,
+      "rareSupportUseRate": 0.999054576708208
+    },
+    "3": {
+      "teamAppearances": 25000,
+      "wins": 11543,
+      "losses": 12898,
+      "draws": 559,
+      "winRate": 0.46172,
+      "avgRounds": 21.92408,
+      "avgRareBattleCards": 1.54848,
+      "avgRareSupportCards": 1.45152,
+      "avgRareSupportCardsUsed": 1.45012,
+      "rareSupportUseRate": 0.9990354938271605
+    },
+    "4": {
+      "teamAppearances": 25000,
+      "wins": 13082,
+      "losses": 11388,
+      "draws": 530,
+      "winRate": 0.52328,
+      "avgRounds": 21.83984,
+      "avgRareBattleCards": 2.01336,
+      "avgRareSupportCards": 1.98664,
+      "avgRareSupportCardsUsed": 1.98504,
+      "rareSupportUseRate": 0.9991946200620142
+    },
+    "5": {
+      "teamAppearances": 25000,
+      "wins": 14274,
+      "losses": 10146,
+      "draws": 580,
+      "winRate": 0.57096,
+      "avgRounds": 21.6134,
+      "avgRareBattleCards": 2.41728,
+      "avgRareSupportCards": 2.58272,
+      "avgRareSupportCardsUsed": 2.58088,
+      "rareSupportUseRate": 0.9992875727914756
+    }
+  },
+  "pairwise": {
+    "2v2": {
+      "pairedScenarios": 2500,
+      "actualMatches": 5000,
+      "A": {
+        "wins": 2466,
+        "losses": 2421,
+        "draws": 113,
+        "winRate": 0.4932,
+        "avgRounds": 22.37
+      },
+      "B": {
+        "wins": 2421,
+        "losses": 2466,
+        "draws": 113,
+        "winRate": 0.4842,
+        "avgRounds": 22.37
+      },
+      "winRateDifferenceAminusB": 0.009,
+      "AWinBLose": 2466,
+      "ALoseBWin": 2421,
+      "bothDrawGames": 113,
+      "mirroredPairOutcomes": {
+        "bothAWins": 682,
+        "bothBWins": 657,
+        "splitWins": 1051,
+        "bothDraw": 3,
+        "mixedDraw": 107
+      },
+      "addedRareBattleRate": 0,
+      "addedRareSupportRate": 0,
+      "addedRareSupportUsesPerPair": 0,
+      "addedRareSupportUseRate": 0,
+      "winRateDifferenceBminusA": -0.009
+    },
+    "2v3": {
+      "pairedScenarios": 2500,
+      "actualMatches": 5000,
+      "A": {
+        "wins": 1996,
+        "losses": 2899,
+        "draws": 105,
+        "winRate": 0.3992,
+        "avgRounds": 22.15
+      },
+      "B": {
+        "wins": 2899,
+        "losses": 1996,
+        "draws": 105,
+        "winRate": 0.5798,
+        "avgRounds": 22.15
+      },
+      "winRateDifferenceAminusB": -0.1806,
+      "AWinBLose": 1996,
+      "ALoseBWin": 2899,
+      "bothDrawGames": 105,
+      "mirroredPairOutcomes": {
+        "bothAWins": 471,
+        "bothBWins": 907,
+        "splitWins": 1019,
+        "bothDraw": 2,
+        "mixedDraw": 101
+      },
+      "addedRareBattleRate": 0.5252,
+      "addedRareSupportRate": 0.4748,
+      "addedRareSupportUsesPerPair": 0.9496,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.1806
+    },
+    "2v4": {
+      "pairedScenarios": 2500,
+      "actualMatches": 5000,
+      "A": {
+        "wins": 1750,
+        "losses": 3161,
+        "draws": 89,
+        "winRate": 0.35,
+        "avgRounds": 22.0202
+      },
+      "B": {
+        "wins": 3161,
+        "losses": 1750,
+        "draws": 89,
+        "winRate": 0.6322,
+        "avgRounds": 22.0202
+      },
+      "winRateDifferenceAminusB": -0.2822,
+      "AWinBLose": 1750,
+      "ALoseBWin": 3161,
+      "bothDrawGames": 89,
+      "mirroredPairOutcomes": {
+        "bothAWins": 383,
+        "bothBWins": 1078,
+        "splitWins": 951,
+        "bothDraw": 1,
+        "mixedDraw": 87
+      },
+      "addedRareBattleRate": 0.502,
+      "addedRareSupportRate": 0.498,
+      "addedRareSupportUsesPerPair": 1.9904,
+      "addedRareSupportUseRate": 0.9991967871485944,
+      "winRateDifferenceBminusA": 0.2822
+    },
+    "2v5": {
+      "pairedScenarios": 2500,
+      "actualMatches": 5000,
+      "A": {
+        "wins": 1367,
+        "losses": 3520,
+        "draws": 113,
+        "winRate": 0.2734,
+        "avgRounds": 21.7064
+      },
+      "B": {
+        "wins": 3520,
+        "losses": 1367,
+        "draws": 113,
+        "winRate": 0.704,
+        "avgRounds": 21.7064
+      },
+      "winRateDifferenceAminusB": -0.4306,
+      "AWinBLose": 1367,
+      "ALoseBWin": 3520,
+      "bothDrawGames": 113,
+      "mirroredPairOutcomes": {
+        "bothAWins": 254,
+        "bothBWins": 1312,
+        "splitWins": 823,
+        "bothDraw": 2,
+        "mixedDraw": 109
+      },
+      "addedRareBattleRate": 0.4764,
+      "addedRareSupportRate": 0.5236,
+      "addedRareSupportUsesPerPair": 3.1408,
+      "addedRareSupportUseRate": 0.9997453526865292,
+      "winRateDifferenceBminusA": 0.4306
+    },
+    "3v3": {
+      "pairedScenarios": 2500,
+      "actualMatches": 5000,
+      "A": {
+        "wins": 2489,
+        "losses": 2390,
+        "draws": 121,
+        "winRate": 0.4978,
+        "avgRounds": 21.9636
+      },
+      "B": {
+        "wins": 2390,
+        "losses": 2489,
+        "draws": 121,
+        "winRate": 0.478,
+        "avgRounds": 21.9636
+      },
+      "winRateDifferenceAminusB": 0.0198,
+      "AWinBLose": 2489,
+      "ALoseBWin": 2390,
+      "bothDrawGames": 121,
+      "mirroredPairOutcomes": {
+        "bothAWins": 714,
+        "bothBWins": 656,
+        "splitWins": 1013,
+        "bothDraw": 4,
+        "mixedDraw": 113
+      },
+      "addedRareBattleRate": 0,
+      "addedRareSupportRate": 0,
+      "addedRareSupportUsesPerPair": 0,
+      "addedRareSupportUseRate": 0,
+      "winRateDifferenceBminusA": -0.0198
+    },
+    "3v4": {
+      "pairedScenarios": 2500,
+      "actualMatches": 5000,
+      "A": {
+        "wins": 2028,
+        "losses": 2860,
+        "draws": 112,
+        "winRate": 0.4056,
+        "avgRounds": 21.922
+      },
+      "B": {
+        "wins": 2860,
+        "losses": 2028,
+        "draws": 112,
+        "winRate": 0.572,
+        "avgRounds": 21.922
+      },
+      "winRateDifferenceAminusB": -0.1664,
+      "AWinBLose": 2028,
+      "ALoseBWin": 2860,
+      "bothDrawGames": 112,
+      "mirroredPairOutcomes": {
+        "bothAWins": 517,
+        "bothBWins": 928,
+        "splitWins": 946,
+        "bothDraw": 3,
+        "mixedDraw": 106
+      },
+      "addedRareBattleRate": 0.4988,
+      "addedRareSupportRate": 0.5012,
+      "addedRareSupportUsesPerPair": 1.0012,
+      "addedRareSupportUseRate": 0.9988028731045491,
+      "winRateDifferenceBminusA": 0.1664
+    },
+    "3v5": {
+      "pairedScenarios": 2500,
+      "actualMatches": 5000,
+      "A": {
+        "wins": 1737,
+        "losses": 3163,
+        "draws": 100,
+        "winRate": 0.3474,
+        "avgRounds": 21.6212
+      },
+      "B": {
+        "wins": 3163,
+        "losses": 1737,
+        "draws": 100,
+        "winRate": 0.6326,
+        "avgRounds": 21.6212
+      },
+      "winRateDifferenceAminusB": -0.2852,
+      "AWinBLose": 1737,
+      "ALoseBWin": 3163,
+      "bothDrawGames": 100,
+      "mirroredPairOutcomes": {
+        "bothAWins": 370,
+        "bothBWins": 1071,
+        "splitWins": 961,
+        "bothDraw": 2,
+        "mixedDraw": 96
+      },
+      "addedRareBattleRate": 0.475,
+      "addedRareSupportRate": 0.525,
+      "addedRareSupportUsesPerPair": 2.0968,
+      "addedRareSupportUseRate": 0.9984761904761905,
+      "winRateDifferenceBminusA": 0.2852
+    },
+    "4v4": {
+      "pairedScenarios": 2500,
+      "actualMatches": 5000,
+      "A": {
+        "wins": 2442,
+        "losses": 2457,
+        "draws": 101,
+        "winRate": 0.4884,
+        "avgRounds": 21.7366
+      },
+      "B": {
+        "wins": 2457,
+        "losses": 2442,
+        "draws": 101,
+        "winRate": 0.4914,
+        "avgRounds": 21.7366
+      },
+      "winRateDifferenceAminusB": -0.003,
+      "AWinBLose": 2442,
+      "ALoseBWin": 2457,
+      "bothDrawGames": 101,
+      "mirroredPairOutcomes": {
+        "bothAWins": 712,
+        "bothBWins": 717,
+        "splitWins": 972,
+        "bothDraw": 2,
+        "mixedDraw": 97
+      },
+      "addedRareBattleRate": 0,
+      "addedRareSupportRate": 0,
+      "addedRareSupportUsesPerPair": 0,
+      "addedRareSupportUseRate": 0,
+      "winRateDifferenceBminusA": 0.003
+    },
+    "4v5": {
+      "pairedScenarios": 2500,
+      "actualMatches": 5000,
+      "A": {
+        "wins": 2162,
+        "losses": 2711,
+        "draws": 127,
+        "winRate": 0.4324,
+        "avgRounds": 21.7838
+      },
+      "B": {
+        "wins": 2711,
+        "losses": 2162,
+        "draws": 127,
+        "winRate": 0.5422,
+        "avgRounds": 21.7838
+      },
+      "winRateDifferenceAminusB": -0.1098,
+      "AWinBLose": 2162,
+      "ALoseBWin": 2711,
+      "bothDrawGames": 127,
+      "mirroredPairOutcomes": {
+        "bothAWins": 539,
+        "bothBWins": 815,
+        "splitWins": 1021,
+        "bothDraw": 2,
+        "mixedDraw": 123
+      },
+      "addedRareBattleRate": 0.4844,
+      "addedRareSupportRate": 0.5156,
+      "addedRareSupportUsesPerPair": 1.0308,
+      "addedRareSupportUseRate": 0.9996121024049651,
+      "winRateDifferenceBminusA": 0.1098
+    },
+    "5v5": {
+      "pairedScenarios": 2500,
+      "actualMatches": 5000,
+      "A": {
+        "wins": 2396,
+        "losses": 2484,
+        "draws": 120,
+        "winRate": 0.4792,
+        "avgRounds": 21.4778
+      },
+      "B": {
+        "wins": 2484,
+        "losses": 2396,
+        "draws": 120,
+        "winRate": 0.4968,
+        "avgRounds": 21.4778
+      },
+      "winRateDifferenceAminusB": -0.0176,
+      "AWinBLose": 2396,
+      "ALoseBWin": 2484,
+      "bothDrawGames": 120,
+      "mirroredPairOutcomes": {
+        "bothAWins": 668,
+        "bothBWins": 709,
+        "splitWins": 1006,
+        "bothDraw": 3,
+        "mixedDraw": 114
+      },
+      "addedRareBattleRate": 0,
+      "addedRareSupportRate": 0,
+      "addedRareSupportUsesPerPair": 0,
+      "addedRareSupportUseRate": 0,
+      "winRateDifferenceBminusA": 0.0176
+    }
+  },
+  "addedRareByType": {
+    "2to3|r-blue-sealer": {
+      "pairedScenarios": 196,
+      "actualMatches": 392,
+      "A": {
+        "wins": 170,
+        "losses": 211,
+        "draws": 11,
+        "winRate": 0.4336734693877551,
+        "avgRounds": 21.668367346938776
+      },
+      "B": {
+        "wins": 211,
+        "losses": 170,
+        "draws": 11,
+        "winRate": 0.5382653061224489,
+        "avgRounds": 21.668367346938776
+      },
+      "winRateDifferenceAminusB": -0.10459183673469388,
+      "AWinBLose": 170,
+      "ALoseBWin": 211,
+      "bothDrawGames": 11,
+      "mirroredPairOutcomes": {
+        "bothAWins": 39,
+        "bothBWins": 57,
+        "splitWins": 89,
+        "bothDraw": 0,
+        "mixedDraw": 11
+      },
+      "addedRareBattleRate": 0.5102040816326531,
+      "addedRareSupportRate": 0.4897959183673469,
+      "addedRareSupportUsesPerPair": 0.9795918367346939,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.10459183673469388
+    },
+    "2to3|r-green-great-fairy": {
+      "pairedScenarios": 193,
+      "actualMatches": 386,
+      "A": {
+        "wins": 144,
+        "losses": 235,
+        "draws": 7,
+        "winRate": 0.37305699481865284,
+        "avgRounds": 22.683937823834196
+      },
+      "B": {
+        "wins": 235,
+        "losses": 144,
+        "draws": 7,
+        "winRate": 0.6088082901554405,
+        "avgRounds": 22.683937823834196
+      },
+      "winRateDifferenceAminusB": -0.23575129533678757,
+      "AWinBLose": 144,
+      "ALoseBWin": 235,
+      "bothDrawGames": 7,
+      "mirroredPairOutcomes": {
+        "bothAWins": 32,
+        "bothBWins": 75,
+        "splitWins": 79,
+        "bothDraw": 0,
+        "mixedDraw": 7
+      },
+      "addedRareBattleRate": 0.32124352331606215,
+      "addedRareSupportRate": 0.6787564766839378,
+      "addedRareSupportUsesPerPair": 1.3575129533678756,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.23575129533678757
+    },
+    "2to3|r-blue-illusionist": {
+      "pairedScenarios": 205,
+      "actualMatches": 410,
+      "A": {
+        "wins": 168,
+        "losses": 235,
+        "draws": 7,
+        "winRate": 0.4097560975609756,
+        "avgRounds": 22.43658536585366
+      },
+      "B": {
+        "wins": 235,
+        "losses": 168,
+        "draws": 7,
+        "winRate": 0.573170731707317,
+        "avgRounds": 22.43658536585366
+      },
+      "winRateDifferenceAminusB": -0.16341463414634147,
+      "AWinBLose": 168,
+      "ALoseBWin": 235,
+      "bothDrawGames": 7,
+      "mirroredPairOutcomes": {
+        "bothAWins": 36,
+        "bothBWins": 69,
+        "splitWins": 93,
+        "bothDraw": 0,
+        "mixedDraw": 7
+      },
+      "addedRareBattleRate": 0.5756097560975609,
+      "addedRareSupportRate": 0.424390243902439,
+      "addedRareSupportUsesPerPair": 0.848780487804878,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.16341463414634147
+    },
+    "2to3|r-red-fist-king": {
+      "pairedScenarios": 242,
+      "actualMatches": 484,
+      "A": {
+        "wins": 188,
+        "losses": 287,
+        "draws": 9,
+        "winRate": 0.3884297520661157,
+        "avgRounds": 21.921487603305785
+      },
+      "B": {
+        "wins": 287,
+        "losses": 188,
+        "draws": 9,
+        "winRate": 0.5929752066115702,
+        "avgRounds": 21.921487603305785
+      },
+      "winRateDifferenceAminusB": -0.20454545454545456,
+      "AWinBLose": 188,
+      "ALoseBWin": 287,
+      "bothDrawGames": 9,
+      "mirroredPairOutcomes": {
+        "bothAWins": 45,
+        "bothBWins": 93,
+        "splitWins": 96,
+        "bothDraw": 0,
+        "mixedDraw": 8
+      },
+      "addedRareBattleRate": 0.5413223140495868,
+      "addedRareSupportRate": 0.45867768595041325,
+      "addedRareSupportUsesPerPair": 0.9173553719008265,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.20454545454545456
+    },
+    "2to3|r-white-arbiter": {
+      "pairedScenarios": 199,
+      "actualMatches": 398,
+      "A": {
+        "wins": 188,
+        "losses": 202,
+        "draws": 8,
+        "winRate": 0.4723618090452261,
+        "avgRounds": 21.992462311557787
+      },
+      "B": {
+        "wins": 202,
+        "losses": 188,
+        "draws": 8,
+        "winRate": 0.507537688442211,
+        "avgRounds": 21.992462311557787
+      },
+      "winRateDifferenceAminusB": -0.035175879396984924,
+      "AWinBLose": 188,
+      "ALoseBWin": 202,
+      "bothDrawGames": 8,
+      "mirroredPairOutcomes": {
+        "bothAWins": 58,
+        "bothBWins": 63,
+        "splitWins": 70,
+        "bothDraw": 0,
+        "mixedDraw": 8
+      },
+      "addedRareBattleRate": 0.4824120603015075,
+      "addedRareSupportRate": 0.5175879396984925,
+      "addedRareSupportUsesPerPair": 1.035175879396985,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.035175879396984924
+    },
+    "2to3|r-green-beast-king": {
+      "pairedScenarios": 193,
+      "actualMatches": 386,
+      "A": {
+        "wins": 156,
+        "losses": 220,
+        "draws": 10,
+        "winRate": 0.40414507772020725,
+        "avgRounds": 22.33937823834197
+      },
+      "B": {
+        "wins": 220,
+        "losses": 156,
+        "draws": 10,
+        "winRate": 0.5699481865284974,
+        "avgRounds": 22.33937823834197
+      },
+      "winRateDifferenceAminusB": -0.16580310880829016,
+      "AWinBLose": 156,
+      "ALoseBWin": 220,
+      "bothDrawGames": 10,
+      "mirroredPairOutcomes": {
+        "bothAWins": 39,
+        "bothBWins": 71,
+        "splitWins": 73,
+        "bothDraw": 0,
+        "mixedDraw": 10
+      },
+      "addedRareBattleRate": 0.46632124352331605,
+      "addedRareSupportRate": 0.533678756476684,
+      "addedRareSupportUsesPerPair": 1.067357512953368,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.16580310880829016
+    },
+    "2to3|r-red-reverse-swordsman": {
+      "pairedScenarios": 207,
+      "actualMatches": 414,
+      "A": {
+        "wins": 161,
+        "losses": 243,
+        "draws": 10,
+        "winRate": 0.3888888888888889,
+        "avgRounds": 21.717391304347824
+      },
+      "B": {
+        "wins": 243,
+        "losses": 161,
+        "draws": 10,
+        "winRate": 0.5869565217391305,
+        "avgRounds": 21.717391304347824
+      },
+      "winRateDifferenceAminusB": -0.19806763285024154,
+      "AWinBLose": 161,
+      "ALoseBWin": 243,
+      "bothDrawGames": 10,
+      "mirroredPairOutcomes": {
+        "bothAWins": 37,
+        "bothBWins": 78,
+        "splitWins": 83,
+        "bothDraw": 0,
+        "mixedDraw": 9
+      },
+      "addedRareBattleRate": 0.5990338164251208,
+      "addedRareSupportRate": 0.40096618357487923,
+      "addedRareSupportUsesPerPair": 0.8019323671497585,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.19806763285024154
+    },
+    "2to3|r-red-revenge-knight": {
+      "pairedScenarios": 218,
+      "actualMatches": 436,
+      "A": {
+        "wins": 161,
+        "losses": 268,
+        "draws": 7,
+        "winRate": 0.36926605504587157,
+        "avgRounds": 21.91743119266055
+      },
+      "B": {
+        "wins": 268,
+        "losses": 161,
+        "draws": 7,
+        "winRate": 0.6146788990825688,
+        "avgRounds": 21.91743119266055
+      },
+      "winRateDifferenceAminusB": -0.24541284403669725,
+      "AWinBLose": 161,
+      "ALoseBWin": 268,
+      "bothDrawGames": 7,
+      "mirroredPairOutcomes": {
+        "bothAWins": 37,
+        "bothBWins": 90,
+        "splitWins": 84,
+        "bothDraw": 0,
+        "mixedDraw": 7
+      },
+      "addedRareBattleRate": 0.5412844036697247,
+      "addedRareSupportRate": 0.45871559633027525,
+      "addedRareSupportUsesPerPair": 0.9174311926605505,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.24541284403669725
+    },
+    "2to3|r-white-sword-saint": {
+      "pairedScenarios": 200,
+      "actualMatches": 400,
+      "A": {
+        "wins": 171,
+        "losses": 221,
+        "draws": 8,
+        "winRate": 0.4275,
+        "avgRounds": 22.085
+      },
+      "B": {
+        "wins": 221,
+        "losses": 171,
+        "draws": 8,
+        "winRate": 0.5525,
+        "avgRounds": 22.085
+      },
+      "winRateDifferenceAminusB": -0.125,
+      "AWinBLose": 171,
+      "ALoseBWin": 221,
+      "bothDrawGames": 8,
+      "mirroredPairOutcomes": {
+        "bothAWins": 44,
+        "bothBWins": 68,
+        "splitWins": 80,
+        "bothDraw": 0,
+        "mixedDraw": 8
+      },
+      "addedRareBattleRate": 0.52,
+      "addedRareSupportRate": 0.48,
+      "addedRareSupportUsesPerPair": 0.96,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.125
+    },
+    "2to3|r-blue-sea-king": {
+      "pairedScenarios": 219,
+      "actualMatches": 438,
+      "A": {
+        "wins": 172,
+        "losses": 257,
+        "draws": 9,
+        "winRate": 0.3926940639269406,
+        "avgRounds": 22.401826484018265
+      },
+      "B": {
+        "wins": 257,
+        "losses": 172,
+        "draws": 9,
+        "winRate": 0.58675799086758,
+        "avgRounds": 22.401826484018265
+      },
+      "winRateDifferenceAminusB": -0.19406392694063926,
+      "AWinBLose": 172,
+      "ALoseBWin": 257,
+      "bothDrawGames": 9,
+      "mirroredPairOutcomes": {
+        "bothAWins": 39,
+        "bothBWins": 81,
+        "splitWins": 90,
+        "bothDraw": 0,
+        "mixedDraw": 9
+      },
+      "addedRareBattleRate": 0.5844748858447488,
+      "addedRareSupportRate": 0.4155251141552511,
+      "addedRareSupportUsesPerPair": 0.8310502283105022,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.19406392694063926
+    },
+    "2to3|r-white-hunter": {
+      "pairedScenarios": 212,
+      "actualMatches": 424,
+      "A": {
+        "wins": 150,
+        "losses": 264,
+        "draws": 10,
+        "winRate": 0.35377358490566035,
+        "avgRounds": 21.870283018867923
+      },
+      "B": {
+        "wins": 264,
+        "losses": 150,
+        "draws": 10,
+        "winRate": 0.6226415094339622,
+        "avgRounds": 21.870283018867923
+      },
+      "winRateDifferenceAminusB": -0.2688679245283019,
+      "AWinBLose": 150,
+      "ALoseBWin": 264,
+      "bothDrawGames": 10,
+      "mirroredPairOutcomes": {
+        "bothAWins": 31,
+        "bothBWins": 85,
+        "splitWins": 86,
+        "bothDraw": 0,
+        "mixedDraw": 10
+      },
+      "addedRareBattleRate": 0.5801886792452831,
+      "addedRareSupportRate": 0.419811320754717,
+      "addedRareSupportUsesPerPair": 0.839622641509434,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.2688679245283019
+    },
+    "2to3|r-green-paladin": {
+      "pairedScenarios": 216,
+      "actualMatches": 432,
+      "A": {
+        "wins": 167,
+        "losses": 256,
+        "draws": 9,
+        "winRate": 0.38657407407407407,
+        "avgRounds": 22.79861111111111
+      },
+      "B": {
+        "wins": 256,
+        "losses": 167,
+        "draws": 9,
+        "winRate": 0.5925925925925926,
+        "avgRounds": 22.79861111111111
+      },
+      "winRateDifferenceAminusB": -0.20601851851851852,
+      "AWinBLose": 167,
+      "ALoseBWin": 256,
+      "bothDrawGames": 9,
+      "mirroredPairOutcomes": {
+        "bothAWins": 34,
+        "bothBWins": 77,
+        "splitWins": 96,
+        "bothDraw": 0,
+        "mixedDraw": 9
+      },
+      "addedRareBattleRate": 0.5509259259259259,
+      "addedRareSupportRate": 0.44907407407407407,
+      "addedRareSupportUsesPerPair": 0.8981481481481481,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.20601851851851852
+    },
+    "2to4|r-white-arbiter": {
+      "pairedScenarios": 426,
+      "actualMatches": 852,
+      "A": {
+        "wins": 336,
+        "losses": 508,
+        "draws": 8,
+        "winRate": 0.39436619718309857,
+        "avgRounds": 21.920187793427232
+      },
+      "B": {
+        "wins": 508,
+        "losses": 336,
+        "draws": 8,
+        "winRate": 0.596244131455399,
+        "avgRounds": 21.920187793427232
+      },
+      "winRateDifferenceAminusB": -0.20187793427230047,
+      "AWinBLose": 336,
+      "ALoseBWin": 508,
+      "bothDrawGames": 8,
+      "mirroredPairOutcomes": {
+        "bothAWins": 88,
+        "bothBWins": 175,
+        "splitWins": 155,
+        "bothDraw": 0,
+        "mixedDraw": 8
+      },
+      "addedRareBattleRate": 0.5046948356807511,
+      "addedRareSupportRate": 0.4953051643192488,
+      "addedRareSupportUsesPerPair": 0.9906103286384976,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.20187793427230047
+    },
+    "2to4|r-white-hunter": {
+      "pairedScenarios": 392,
+      "actualMatches": 784,
+      "A": {
+        "wins": 257,
+        "losses": 511,
+        "draws": 16,
+        "winRate": 0.3278061224489796,
+        "avgRounds": 21.713010204081634
+      },
+      "B": {
+        "wins": 511,
+        "losses": 257,
+        "draws": 16,
+        "winRate": 0.6517857142857143,
+        "avgRounds": 21.713010204081634
+      },
+      "winRateDifferenceAminusB": -0.3239795918367347,
+      "AWinBLose": 257,
+      "ALoseBWin": 511,
+      "bothDrawGames": 16,
+      "mirroredPairOutcomes": {
+        "bothAWins": 55,
+        "bothBWins": 176,
+        "splitWins": 145,
+        "bothDraw": 0,
+        "mixedDraw": 16
+      },
+      "addedRareBattleRate": 0.4770408163265306,
+      "addedRareSupportRate": 0.5229591836734694,
+      "addedRareSupportUsesPerPair": 1.0459183673469388,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.3239795918367347
+    },
+    "2to4|r-green-paladin": {
+      "pairedScenarios": 396,
+      "actualMatches": 792,
+      "A": {
+        "wins": 279,
+        "losses": 497,
+        "draws": 16,
+        "winRate": 0.3522727272727273,
+        "avgRounds": 22.174242424242426
+      },
+      "B": {
+        "wins": 497,
+        "losses": 279,
+        "draws": 16,
+        "winRate": 0.6275252525252525,
+        "avgRounds": 22.174242424242426
+      },
+      "winRateDifferenceAminusB": -0.27525252525252525,
+      "AWinBLose": 279,
+      "ALoseBWin": 497,
+      "bothDrawGames": 16,
+      "mirroredPairOutcomes": {
+        "bothAWins": 59,
+        "bothBWins": 167,
+        "splitWins": 154,
+        "bothDraw": 0,
+        "mixedDraw": 16
+      },
+      "addedRareBattleRate": 0.51010101010101,
+      "addedRareSupportRate": 0.4898989898989899,
+      "addedRareSupportUsesPerPair": 0.9797979797979798,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.27525252525252525
+    },
+    "2to4|r-blue-sealer": {
+      "pairedScenarios": 442,
+      "actualMatches": 884,
+      "A": {
+        "wins": 332,
+        "losses": 533,
+        "draws": 19,
+        "winRate": 0.3755656108597285,
+        "avgRounds": 22.263574660633484
+      },
+      "B": {
+        "wins": 533,
+        "losses": 332,
+        "draws": 19,
+        "winRate": 0.6029411764705882,
+        "avgRounds": 22.263574660633484
+      },
+      "winRateDifferenceAminusB": -0.22737556561085973,
+      "AWinBLose": 332,
+      "ALoseBWin": 533,
+      "bothDrawGames": 19,
+      "mirroredPairOutcomes": {
+        "bothAWins": 67,
+        "bothBWins": 167,
+        "splitWins": 190,
+        "bothDraw": 0,
+        "mixedDraw": 18
+      },
+      "addedRareBattleRate": 0.4683257918552036,
+      "addedRareSupportRate": 0.5316742081447964,
+      "addedRareSupportUsesPerPair": 1.0633484162895928,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.22737556561085973
+    },
+    "2to4|r-blue-sea-king": {
+      "pairedScenarios": 405,
+      "actualMatches": 810,
+      "A": {
+        "wins": 288,
+        "losses": 507,
+        "draws": 15,
+        "winRate": 0.35555555555555557,
+        "avgRounds": 22.3
+      },
+      "B": {
+        "wins": 507,
+        "losses": 288,
+        "draws": 15,
+        "winRate": 0.6259259259259259,
+        "avgRounds": 22.3
+      },
+      "winRateDifferenceAminusB": -0.27037037037037037,
+      "AWinBLose": 288,
+      "ALoseBWin": 507,
+      "bothDrawGames": 15,
+      "mirroredPairOutcomes": {
+        "bothAWins": 53,
+        "bothBWins": 160,
+        "splitWins": 177,
+        "bothDraw": 0,
+        "mixedDraw": 15
+      },
+      "addedRareBattleRate": 0.5308641975308642,
+      "addedRareSupportRate": 0.4691358024691358,
+      "addedRareSupportUsesPerPair": 0.9382716049382716,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.27037037037037037
+    },
+    "2to4|r-red-revenge-knight": {
+      "pairedScenarios": 419,
+      "actualMatches": 838,
+      "A": {
+        "wins": 289,
+        "losses": 534,
+        "draws": 15,
+        "winRate": 0.3448687350835322,
+        "avgRounds": 21.863961813842483
+      },
+      "B": {
+        "wins": 534,
+        "losses": 289,
+        "draws": 15,
+        "winRate": 0.6372315035799523,
+        "avgRounds": 21.863961813842483
+      },
+      "winRateDifferenceAminusB": -0.29236276849642007,
+      "AWinBLose": 289,
+      "ALoseBWin": 534,
+      "bothDrawGames": 15,
+      "mirroredPairOutcomes": {
+        "bothAWins": 68,
+        "bothBWins": 188,
+        "splitWins": 148,
+        "bothDraw": 0,
+        "mixedDraw": 15
+      },
+      "addedRareBattleRate": 0.5536992840095465,
+      "addedRareSupportRate": 0.44630071599045346,
+      "addedRareSupportUsesPerPair": 0.8926014319809069,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.29236276849642007
+    },
+    "2to4|r-green-great-fairy": {
+      "pairedScenarios": 444,
+      "actualMatches": 888,
+      "A": {
+        "wins": 291,
+        "losses": 578,
+        "draws": 19,
+        "winRate": 0.3277027027027027,
+        "avgRounds": 22.58108108108108
+      },
+      "B": {
+        "wins": 578,
+        "losses": 291,
+        "draws": 19,
+        "winRate": 0.6509009009009009,
+        "avgRounds": 22.58108108108108
+      },
+      "winRateDifferenceAminusB": -0.32319819819819817,
+      "AWinBLose": 291,
+      "ALoseBWin": 578,
+      "bothDrawGames": 19,
+      "mirroredPairOutcomes": {
+        "bothAWins": 59,
+        "bothBWins": 203,
+        "splitWins": 164,
+        "bothDraw": 0,
+        "mixedDraw": 18
+      },
+      "addedRareBattleRate": 0.32207207207207206,
+      "addedRareSupportRate": 0.6779279279279279,
+      "addedRareSupportUsesPerPair": 1.3558558558558558,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.32319819819819817
+    },
+    "2to4|r-red-fist-king": {
+      "pairedScenarios": 402,
+      "actualMatches": 804,
+      "A": {
+        "wins": 281,
+        "losses": 513,
+        "draws": 10,
+        "winRate": 0.34950248756218905,
+        "avgRounds": 21.992537313432837
+      },
+      "B": {
+        "wins": 513,
+        "losses": 281,
+        "draws": 10,
+        "winRate": 0.6380597014925373,
+        "avgRounds": 21.992537313432837
+      },
+      "winRateDifferenceAminusB": -0.2885572139303483,
+      "AWinBLose": 281,
+      "ALoseBWin": 513,
+      "bothDrawGames": 10,
+      "mirroredPairOutcomes": {
+        "bothAWins": 55,
+        "bothBWins": 169,
+        "splitWins": 168,
+        "bothDraw": 0,
+        "mixedDraw": 10
+      },
+      "addedRareBattleRate": 0.5621890547263682,
+      "addedRareSupportRate": 0.43781094527363185,
+      "addedRareSupportUsesPerPair": 0.8756218905472637,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.2885572139303483
+    },
+    "2to4|r-blue-illusionist": {
+      "pairedScenarios": 416,
+      "actualMatches": 832,
+      "A": {
+        "wins": 324,
+        "losses": 494,
+        "draws": 14,
+        "winRate": 0.3894230769230769,
+        "avgRounds": 22.177884615384617
+      },
+      "B": {
+        "wins": 494,
+        "losses": 324,
+        "draws": 14,
+        "winRate": 0.59375,
+        "avgRounds": 22.177884615384617
+      },
+      "winRateDifferenceAminusB": -0.20432692307692307,
+      "AWinBLose": 324,
+      "ALoseBWin": 494,
+      "bothDrawGames": 14,
+      "mirroredPairOutcomes": {
+        "bothAWins": 75,
+        "bothBWins": 158,
+        "splitWins": 169,
+        "bothDraw": 0,
+        "mixedDraw": 14
+      },
+      "addedRareBattleRate": 0.5240384615384616,
+      "addedRareSupportRate": 0.47596153846153844,
+      "addedRareSupportUsesPerPair": 0.9423076923076923,
+      "addedRareSupportUseRate": 0.98989898989899,
+      "winRateDifferenceBminusA": 0.20432692307692307
+    },
+    "2to4|r-red-reverse-swordsman": {
+      "pairedScenarios": 431,
+      "actualMatches": 862,
+      "A": {
+        "wins": 302,
+        "losses": 538,
+        "draws": 22,
+        "winRate": 0.3503480278422274,
+        "avgRounds": 21.607888631090486
+      },
+      "B": {
+        "wins": 538,
+        "losses": 302,
+        "draws": 22,
+        "winRate": 0.6241299303944315,
+        "avgRounds": 21.607888631090486
+      },
+      "winRateDifferenceAminusB": -0.2737819025522042,
+      "AWinBLose": 302,
+      "ALoseBWin": 538,
+      "bothDrawGames": 22,
+      "mirroredPairOutcomes": {
+        "bothAWins": 72,
+        "bothBWins": 186,
+        "splitWins": 151,
+        "bothDraw": 0,
+        "mixedDraw": 22
+      },
+      "addedRareBattleRate": 0.5382830626450116,
+      "addedRareSupportRate": 0.4617169373549884,
+      "addedRareSupportUsesPerPair": 0.9234338747099768,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.2737819025522042
+    },
+    "2to4|r-white-sword-saint": {
+      "pairedScenarios": 421,
+      "actualMatches": 842,
+      "A": {
+        "wins": 278,
+        "losses": 551,
+        "draws": 13,
+        "winRate": 0.33016627078384797,
+        "avgRounds": 21.81235154394299
+      },
+      "B": {
+        "wins": 551,
+        "losses": 278,
+        "draws": 13,
+        "winRate": 0.6543942992874109,
+        "avgRounds": 21.81235154394299
+      },
+      "winRateDifferenceAminusB": -0.32422802850356297,
+      "AWinBLose": 278,
+      "ALoseBWin": 551,
+      "bothDrawGames": 13,
+      "mirroredPairOutcomes": {
+        "bothAWins": 66,
+        "bothBWins": 201,
+        "splitWins": 141,
+        "bothDraw": 0,
+        "mixedDraw": 13
+      },
+      "addedRareBattleRate": 0.503562945368171,
+      "addedRareSupportRate": 0.49643705463182897,
+      "addedRareSupportUsesPerPair": 0.9928741092636579,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.32422802850356297
+    },
+    "2to4|r-green-beast-king": {
+      "pairedScenarios": 406,
+      "actualMatches": 812,
+      "A": {
+        "wins": 243,
+        "losses": 558,
+        "draws": 11,
+        "winRate": 0.29926108374384236,
+        "avgRounds": 21.79433497536946
+      },
+      "B": {
+        "wins": 558,
+        "losses": 243,
+        "draws": 11,
+        "winRate": 0.687192118226601,
+        "avgRounds": 21.79433497536946
+      },
+      "winRateDifferenceAminusB": -0.3879310344827586,
+      "AWinBLose": 243,
+      "ALoseBWin": 558,
+      "bothDrawGames": 11,
+      "mirroredPairOutcomes": {
+        "bothAWins": 49,
+        "bothBWins": 206,
+        "splitWins": 140,
+        "bothDraw": 0,
+        "mixedDraw": 11
+      },
+      "addedRareBattleRate": 0.5443349753694581,
+      "addedRareSupportRate": 0.45566502463054187,
+      "addedRareSupportUsesPerPair": 0.9113300492610837,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.3879310344827586
+    },
+    "2to5|r-red-revenge-knight": {
+      "pairedScenarios": 614,
+      "actualMatches": 1228,
+      "A": {
+        "wins": 332,
+        "losses": 869,
+        "draws": 27,
+        "winRate": 0.2703583061889251,
+        "avgRounds": 21.692182410423452
+      },
+      "B": {
+        "wins": 869,
+        "losses": 332,
+        "draws": 27,
+        "winRate": 0.7076547231270358,
+        "avgRounds": 21.692182410423452
+      },
+      "winRateDifferenceAminusB": -0.4372964169381108,
+      "AWinBLose": 332,
+      "ALoseBWin": 869,
+      "bothDrawGames": 27,
+      "mirroredPairOutcomes": {
+        "bothAWins": 53,
+        "bothBWins": 319,
+        "splitWins": 216,
+        "bothDraw": 0,
+        "mixedDraw": 26
+      },
+      "addedRareBattleRate": 0.5456026058631922,
+      "addedRareSupportRate": 0.4543973941368078,
+      "addedRareSupportUsesPerPair": 0.9087947882736156,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.4372964169381108
+    },
+    "2to5|r-blue-sea-king": {
+      "pairedScenarios": 597,
+      "actualMatches": 1194,
+      "A": {
+        "wins": 331,
+        "losses": 842,
+        "draws": 21,
+        "winRate": 0.27721943048576214,
+        "avgRounds": 21.798157453936348
+      },
+      "B": {
+        "wins": 842,
+        "losses": 331,
+        "draws": 21,
+        "winRate": 0.7051926298157454,
+        "avgRounds": 21.798157453936348
+      },
+      "winRateDifferenceAminusB": -0.42797319932998323,
+      "AWinBLose": 331,
+      "ALoseBWin": 842,
+      "bothDrawGames": 21,
+      "mirroredPairOutcomes": {
+        "bothAWins": 72,
+        "bothBWins": 328,
+        "splitWins": 177,
+        "bothDraw": 0,
+        "mixedDraw": 20
+      },
+      "addedRareBattleRate": 0.49748743718592964,
+      "addedRareSupportRate": 0.5025125628140703,
+      "addedRareSupportUsesPerPair": 1.0050251256281406,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.42797319932998323
+    },
+    "2to5|r-white-sword-saint": {
+      "pairedScenarios": 590,
+      "actualMatches": 1180,
+      "A": {
+        "wins": 300,
+        "losses": 851,
+        "draws": 29,
+        "winRate": 0.2542372881355932,
+        "avgRounds": 21.359322033898305
+      },
+      "B": {
+        "wins": 851,
+        "losses": 300,
+        "draws": 29,
+        "winRate": 0.7211864406779661,
+        "avgRounds": 21.359322033898305
+      },
+      "winRateDifferenceAminusB": -0.4669491525423729,
+      "AWinBLose": 300,
+      "ALoseBWin": 851,
+      "bothDrawGames": 29,
+      "mirroredPairOutcomes": {
+        "bothAWins": 55,
+        "bothBWins": 324,
+        "splitWins": 183,
+        "bothDraw": 0,
+        "mixedDraw": 28
+      },
+      "addedRareBattleRate": 0.4694915254237288,
+      "addedRareSupportRate": 0.5305084745762711,
+      "addedRareSupportUsesPerPair": 1.0610169491525423,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.4669491525423729
+    },
+    "2to5|r-red-reverse-swordsman": {
+      "pairedScenarios": 677,
+      "actualMatches": 1354,
+      "A": {
+        "wins": 385,
+        "losses": 934,
+        "draws": 35,
+        "winRate": 0.2843426883308715,
+        "avgRounds": 21.603397341211227
+      },
+      "B": {
+        "wins": 934,
+        "losses": 385,
+        "draws": 35,
+        "winRate": 0.689807976366322,
+        "avgRounds": 21.603397341211227
+      },
+      "winRateDifferenceAminusB": -0.4054652880354505,
+      "AWinBLose": 385,
+      "ALoseBWin": 934,
+      "bothDrawGames": 35,
+      "mirroredPairOutcomes": {
+        "bothAWins": 76,
+        "bothBWins": 344,
+        "splitWins": 222,
+        "bothDraw": 0,
+        "mixedDraw": 35
+      },
+      "addedRareBattleRate": 0.5140324963072378,
+      "addedRareSupportRate": 0.4859675036927622,
+      "addedRareSupportUsesPerPair": 0.9719350073855244,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.4054652880354505
+    },
+    "2to5|r-white-arbiter": {
+      "pairedScenarios": 604,
+      "actualMatches": 1208,
+      "A": {
+        "wins": 375,
+        "losses": 798,
+        "draws": 35,
+        "winRate": 0.31043046357615894,
+        "avgRounds": 21.806291390728475
+      },
+      "B": {
+        "wins": 798,
+        "losses": 375,
+        "draws": 35,
+        "winRate": 0.6605960264900662,
+        "avgRounds": 21.806291390728475
+      },
+      "winRateDifferenceAminusB": -0.35016556291390727,
+      "AWinBLose": 375,
+      "ALoseBWin": 798,
+      "bothDrawGames": 35,
+      "mirroredPairOutcomes": {
+        "bothAWins": 77,
+        "bothBWins": 283,
+        "splitWins": 209,
+        "bothDraw": 0,
+        "mixedDraw": 35
+      },
+      "addedRareBattleRate": 0.4718543046357616,
+      "addedRareSupportRate": 0.5281456953642384,
+      "addedRareSupportUsesPerPair": 1.0562913907284768,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.35016556291390727
+    },
+    "2to5|r-white-hunter": {
+      "pairedScenarios": 648,
+      "actualMatches": 1296,
+      "A": {
+        "wins": 349,
+        "losses": 921,
+        "draws": 26,
+        "winRate": 0.2692901234567901,
+        "avgRounds": 21.607253086419753
+      },
+      "B": {
+        "wins": 921,
+        "losses": 349,
+        "draws": 26,
+        "winRate": 0.7106481481481481,
+        "avgRounds": 21.607253086419753
+      },
+      "winRateDifferenceAminusB": -0.44135802469135804,
+      "AWinBLose": 349,
+      "ALoseBWin": 921,
+      "bothDrawGames": 26,
+      "mirroredPairOutcomes": {
+        "bothAWins": 59,
+        "bothBWins": 339,
+        "splitWins": 225,
+        "bothDraw": 0,
+        "mixedDraw": 25
+      },
+      "addedRareBattleRate": 0.47530864197530864,
+      "addedRareSupportRate": 0.5246913580246914,
+      "addedRareSupportUsesPerPair": 1.0493827160493827,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.44135802469135804
+    },
+    "2to5|r-green-paladin": {
+      "pairedScenarios": 638,
+      "actualMatches": 1276,
+      "A": {
+        "wins": 321,
+        "losses": 922,
+        "draws": 33,
+        "winRate": 0.25156739811912227,
+        "avgRounds": 21.880094043887148
+      },
+      "B": {
+        "wins": 922,
+        "losses": 321,
+        "draws": 33,
+        "winRate": 0.7225705329153606,
+        "avgRounds": 21.880094043887148
+      },
+      "winRateDifferenceAminusB": -0.47100313479623823,
+      "AWinBLose": 321,
+      "ALoseBWin": 922,
+      "bothDrawGames": 33,
+      "mirroredPairOutcomes": {
+        "bothAWins": 51,
+        "bothBWins": 342,
+        "splitWins": 212,
+        "bothDraw": 0,
+        "mixedDraw": 33
+      },
+      "addedRareBattleRate": 0.48119122257053293,
+      "addedRareSupportRate": 0.5188087774294671,
+      "addedRareSupportUsesPerPair": 1.0376175548589341,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.47100313479623823
+    },
+    "2to5|r-blue-illusionist": {
+      "pairedScenarios": 620,
+      "actualMatches": 1240,
+      "A": {
+        "wins": 353,
+        "losses": 854,
+        "draws": 33,
+        "winRate": 0.2846774193548387,
+        "avgRounds": 21.795967741935485
+      },
+      "B": {
+        "wins": 854,
+        "losses": 353,
+        "draws": 33,
+        "winRate": 0.6887096774193548,
+        "avgRounds": 21.795967741935485
+      },
+      "winRateDifferenceAminusB": -0.40403225806451615,
+      "AWinBLose": 353,
+      "ALoseBWin": 854,
+      "bothDrawGames": 33,
+      "mirroredPairOutcomes": {
+        "bothAWins": 63,
+        "bothBWins": 310,
+        "splitWins": 215,
+        "bothDraw": 0,
+        "mixedDraw": 32
+      },
+      "addedRareBattleRate": 0.5048387096774194,
+      "addedRareSupportRate": 0.49516129032258066,
+      "addedRareSupportUsesPerPair": 0.9870967741935484,
+      "addedRareSupportUseRate": 0.996742671009772,
+      "winRateDifferenceBminusA": 0.40403225806451615
+    },
+    "2to5|r-green-great-fairy": {
+      "pairedScenarios": 651,
+      "actualMatches": 1302,
+      "A": {
+        "wins": 321,
+        "losses": 955,
+        "draws": 26,
+        "winRate": 0.2465437788018433,
+        "avgRounds": 22.053763440860216
+      },
+      "B": {
+        "wins": 955,
+        "losses": 321,
+        "draws": 26,
+        "winRate": 0.7334869431643625,
+        "avgRounds": 22.053763440860216
+      },
+      "winRateDifferenceAminusB": -0.4869431643625192,
+      "AWinBLose": 321,
+      "ALoseBWin": 955,
+      "bothDrawGames": 26,
+      "mirroredPairOutcomes": {
+        "bothAWins": 56,
+        "bothBWins": 367,
+        "splitWins": 202,
+        "bothDraw": 0,
+        "mixedDraw": 26
+      },
+      "addedRareBattleRate": 0.30721966205837176,
+      "addedRareSupportRate": 0.6927803379416283,
+      "addedRareSupportUsesPerPair": 1.3855606758832566,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.4869431643625192
+    },
+    "2to5|r-red-fist-king": {
+      "pairedScenarios": 641,
+      "actualMatches": 1282,
+      "A": {
+        "wins": 349,
+        "losses": 907,
+        "draws": 26,
+        "winRate": 0.27223088923556943,
+        "avgRounds": 21.256630265210607
+      },
+      "B": {
+        "wins": 907,
+        "losses": 349,
+        "draws": 26,
+        "winRate": 0.7074882995319812,
+        "avgRounds": 21.256630265210607
+      },
+      "winRateDifferenceAminusB": -0.43525741029641185,
+      "AWinBLose": 349,
+      "ALoseBWin": 907,
+      "bothDrawGames": 26,
+      "mirroredPairOutcomes": {
+        "bothAWins": 63,
+        "bothBWins": 338,
+        "splitWins": 214,
+        "bothDraw": 0,
+        "mixedDraw": 26
+      },
+      "addedRareBattleRate": 0.5132605304212169,
+      "addedRareSupportRate": 0.48673946957878317,
+      "addedRareSupportUsesPerPair": 0.9734789391575663,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.43525741029641185
+    },
+    "2to5|r-green-beast-king": {
+      "pairedScenarios": 635,
+      "actualMatches": 1270,
+      "A": {
+        "wins": 313,
+        "losses": 934,
+        "draws": 23,
+        "winRate": 0.24645669291338582,
+        "avgRounds": 21.58267716535433
+      },
+      "B": {
+        "wins": 934,
+        "losses": 313,
+        "draws": 23,
+        "winRate": 0.7354330708661417,
+        "avgRounds": 21.58267716535433
+      },
+      "winRateDifferenceAminusB": -0.4889763779527559,
+      "AWinBLose": 313,
+      "ALoseBWin": 934,
+      "bothDrawGames": 23,
+      "mirroredPairOutcomes": {
+        "bothAWins": 53,
+        "bothBWins": 360,
+        "splitWins": 200,
+        "bothDraw": 0,
+        "mixedDraw": 22
+      },
+      "addedRareBattleRate": 0.5070866141732283,
+      "addedRareSupportRate": 0.49291338582677163,
+      "addedRareSupportUsesPerPair": 0.9858267716535433,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.4889763779527559
+    },
+    "2to5|r-blue-sealer": {
+      "pairedScenarios": 585,
+      "actualMatches": 1170,
+      "A": {
+        "wins": 372,
+        "losses": 773,
+        "draws": 25,
+        "winRate": 0.31794871794871793,
+        "avgRounds": 22.05982905982906
+      },
+      "B": {
+        "wins": 773,
+        "losses": 372,
+        "draws": 25,
+        "winRate": 0.6606837606837607,
+        "avgRounds": 22.05982905982906
+      },
+      "winRateDifferenceAminusB": -0.34273504273504274,
+      "AWinBLose": 372,
+      "ALoseBWin": 773,
+      "bothDrawGames": 25,
+      "mirroredPairOutcomes": {
+        "bothAWins": 84,
+        "bothBWins": 282,
+        "splitWins": 194,
+        "bothDraw": 0,
+        "mixedDraw": 25
+      },
+      "addedRareBattleRate": 0.4307692307692308,
+      "addedRareSupportRate": 0.5692307692307692,
+      "addedRareSupportUsesPerPair": 1.1384615384615384,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.34273504273504274
+    },
+    "3to4|r-white-hunter": {
+      "pairedScenarios": 207,
+      "actualMatches": 414,
+      "A": {
+        "wins": 144,
+        "losses": 259,
+        "draws": 11,
+        "winRate": 0.34782608695652173,
+        "avgRounds": 21.567632850241544
+      },
+      "B": {
+        "wins": 259,
+        "losses": 144,
+        "draws": 11,
+        "winRate": 0.6256038647342995,
+        "avgRounds": 21.567632850241544
+      },
+      "winRateDifferenceAminusB": -0.2777777777777778,
+      "AWinBLose": 144,
+      "ALoseBWin": 259,
+      "bothDrawGames": 11,
+      "mirroredPairOutcomes": {
+        "bothAWins": 36,
+        "bothBWins": 88,
+        "splitWins": 72,
+        "bothDraw": 0,
+        "mixedDraw": 11
+      },
+      "addedRareBattleRate": 0.48792270531400966,
+      "addedRareSupportRate": 0.5120772946859904,
+      "addedRareSupportUsesPerPair": 1.0241545893719808,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.2777777777777778
+    },
+    "3to4|r-red-reverse-swordsman": {
+      "pairedScenarios": 210,
+      "actualMatches": 420,
+      "A": {
+        "wins": 166,
+        "losses": 244,
+        "draws": 10,
+        "winRate": 0.3952380952380952,
+        "avgRounds": 21.695238095238096
+      },
+      "B": {
+        "wins": 244,
+        "losses": 166,
+        "draws": 10,
+        "winRate": 0.580952380952381,
+        "avgRounds": 21.695238095238096
+      },
+      "winRateDifferenceAminusB": -0.18571428571428572,
+      "AWinBLose": 166,
+      "ALoseBWin": 244,
+      "bothDrawGames": 10,
+      "mirroredPairOutcomes": {
+        "bothAWins": 40,
+        "bothBWins": 79,
+        "splitWins": 81,
+        "bothDraw": 0,
+        "mixedDraw": 10
+      },
+      "addedRareBattleRate": 0.5571428571428572,
+      "addedRareSupportRate": 0.44285714285714284,
+      "addedRareSupportUsesPerPair": 0.8857142857142857,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.18571428571428572
+    },
+    "3to4|r-white-sword-saint": {
+      "pairedScenarios": 206,
+      "actualMatches": 412,
+      "A": {
+        "wins": 165,
+        "losses": 231,
+        "draws": 16,
+        "winRate": 0.40048543689320387,
+        "avgRounds": 22.109223300970875
+      },
+      "B": {
+        "wins": 231,
+        "losses": 165,
+        "draws": 16,
+        "winRate": 0.5606796116504854,
+        "avgRounds": 22.109223300970875
+      },
+      "winRateDifferenceAminusB": -0.16019417475728157,
+      "AWinBLose": 165,
+      "ALoseBWin": 231,
+      "bothDrawGames": 16,
+      "mirroredPairOutcomes": {
+        "bothAWins": 42,
+        "bothBWins": 75,
+        "splitWins": 74,
+        "bothDraw": 0,
+        "mixedDraw": 15
+      },
+      "addedRareBattleRate": 0.5631067961165048,
+      "addedRareSupportRate": 0.4368932038834951,
+      "addedRareSupportUsesPerPair": 0.8737864077669902,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.16019417475728157
+    },
+    "3to4|r-red-revenge-knight": {
+      "pairedScenarios": 213,
+      "actualMatches": 426,
+      "A": {
+        "wins": 196,
+        "losses": 217,
+        "draws": 13,
+        "winRate": 0.460093896713615,
+        "avgRounds": 21.711267605633804
+      },
+      "B": {
+        "wins": 217,
+        "losses": 196,
+        "draws": 13,
+        "winRate": 0.5093896713615024,
+        "avgRounds": 21.711267605633804
+      },
+      "winRateDifferenceAminusB": -0.04929577464788732,
+      "AWinBLose": 196,
+      "ALoseBWin": 217,
+      "bothDrawGames": 13,
+      "mirroredPairOutcomes": {
+        "bothAWins": 54,
+        "bothBWins": 64,
+        "splitWins": 83,
+        "bothDraw": 0,
+        "mixedDraw": 12
+      },
+      "addedRareBattleRate": 0.49295774647887325,
+      "addedRareSupportRate": 0.5070422535211268,
+      "addedRareSupportUsesPerPair": 1.0140845070422535,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.04929577464788732
+    },
+    "3to4|r-white-arbiter": {
+      "pairedScenarios": 209,
+      "actualMatches": 418,
+      "A": {
+        "wins": 197,
+        "losses": 213,
+        "draws": 8,
+        "winRate": 0.47129186602870815,
+        "avgRounds": 21.940191387559807
+      },
+      "B": {
+        "wins": 213,
+        "losses": 197,
+        "draws": 8,
+        "winRate": 0.5095693779904307,
+        "avgRounds": 21.940191387559807
+      },
+      "winRateDifferenceAminusB": -0.03827751196172249,
+      "AWinBLose": 197,
+      "ALoseBWin": 213,
+      "bothDrawGames": 8,
+      "mirroredPairOutcomes": {
+        "bothAWins": 57,
+        "bothBWins": 64,
+        "splitWins": 80,
+        "bothDraw": 0,
+        "mixedDraw": 8
+      },
+      "addedRareBattleRate": 0.4784688995215311,
+      "addedRareSupportRate": 0.5215311004784688,
+      "addedRareSupportUsesPerPair": 1.0430622009569377,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.03827751196172249
+    },
+    "3to4|r-green-paladin": {
+      "pairedScenarios": 233,
+      "actualMatches": 466,
+      "A": {
+        "wins": 189,
+        "losses": 267,
+        "draws": 10,
+        "winRate": 0.4055793991416309,
+        "avgRounds": 22.371244635193133
+      },
+      "B": {
+        "wins": 267,
+        "losses": 189,
+        "draws": 10,
+        "winRate": 0.572961373390558,
+        "avgRounds": 22.371244635193133
+      },
+      "winRateDifferenceAminusB": -0.16738197424892703,
+      "AWinBLose": 189,
+      "ALoseBWin": 267,
+      "bothDrawGames": 10,
+      "mirroredPairOutcomes": {
+        "bothAWins": 51,
+        "bothBWins": 91,
+        "splitWins": 81,
+        "bothDraw": 0,
+        "mixedDraw": 10
+      },
+      "addedRareBattleRate": 0.5278969957081545,
+      "addedRareSupportRate": 0.4721030042918455,
+      "addedRareSupportUsesPerPair": 0.944206008583691,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.16738197424892703
+    },
+    "3to4|r-blue-illusionist": {
+      "pairedScenarios": 224,
+      "actualMatches": 448,
+      "A": {
+        "wins": 210,
+        "losses": 231,
+        "draws": 7,
+        "winRate": 0.46875,
+        "avgRounds": 21.96875
+      },
+      "B": {
+        "wins": 231,
+        "losses": 210,
+        "draws": 7,
+        "winRate": 0.515625,
+        "avgRounds": 21.96875
+      },
+      "winRateDifferenceAminusB": -0.046875,
+      "AWinBLose": 210,
+      "ALoseBWin": 231,
+      "bothDrawGames": 7,
+      "mirroredPairOutcomes": {
+        "bothAWins": 63,
+        "bothBWins": 73,
+        "splitWins": 81,
+        "bothDraw": 0,
+        "mixedDraw": 7
+      },
+      "addedRareBattleRate": 0.5446428571428571,
+      "addedRareSupportRate": 0.45535714285714285,
+      "addedRareSupportUsesPerPair": 0.8973214285714286,
+      "addedRareSupportUseRate": 0.9852941176470589,
+      "winRateDifferenceBminusA": 0.046875
+    },
+    "3to4|r-red-fist-king": {
+      "pairedScenarios": 177,
+      "actualMatches": 354,
+      "A": {
+        "wins": 142,
+        "losses": 203,
+        "draws": 9,
+        "winRate": 0.4011299435028249,
+        "avgRounds": 21.793785310734464
+      },
+      "B": {
+        "wins": 203,
+        "losses": 142,
+        "draws": 9,
+        "winRate": 0.5734463276836158,
+        "avgRounds": 21.793785310734464
+      },
+      "winRateDifferenceAminusB": -0.17231638418079095,
+      "AWinBLose": 142,
+      "ALoseBWin": 203,
+      "bothDrawGames": 9,
+      "mirroredPairOutcomes": {
+        "bothAWins": 38,
+        "bothBWins": 68,
+        "splitWins": 62,
+        "bothDraw": 0,
+        "mixedDraw": 9
+      },
+      "addedRareBattleRate": 0.4915254237288136,
+      "addedRareSupportRate": 0.5084745762711864,
+      "addedRareSupportUsesPerPair": 1.0169491525423728,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.17231638418079095
+    },
+    "3to4|r-blue-sea-king": {
+      "pairedScenarios": 215,
+      "actualMatches": 430,
+      "A": {
+        "wins": 159,
+        "losses": 262,
+        "draws": 9,
+        "winRate": 0.3697674418604651,
+        "avgRounds": 22.132558139534883
+      },
+      "B": {
+        "wins": 262,
+        "losses": 159,
+        "draws": 9,
+        "winRate": 0.6093023255813953,
+        "avgRounds": 22.132558139534883
+      },
+      "winRateDifferenceAminusB": -0.23953488372093024,
+      "AWinBLose": 159,
+      "ALoseBWin": 262,
+      "bothDrawGames": 9,
+      "mirroredPairOutcomes": {
+        "bothAWins": 40,
+        "bothBWins": 93,
+        "splitWins": 74,
+        "bothDraw": 0,
+        "mixedDraw": 8
+      },
+      "addedRareBattleRate": 0.5720930232558139,
+      "addedRareSupportRate": 0.42790697674418604,
+      "addedRareSupportUsesPerPair": 0.8558139534883721,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.23953488372093024
+    },
+    "3to4|r-green-beast-king": {
+      "pairedScenarios": 206,
+      "actualMatches": 412,
+      "A": {
+        "wins": 144,
+        "losses": 259,
+        "draws": 9,
+        "winRate": 0.34951456310679613,
+        "avgRounds": 21.854368932038835
+      },
+      "B": {
+        "wins": 259,
+        "losses": 144,
+        "draws": 9,
+        "winRate": 0.6286407766990292,
+        "avgRounds": 21.854368932038835
+      },
+      "winRateDifferenceAminusB": -0.279126213592233,
+      "AWinBLose": 144,
+      "ALoseBWin": 259,
+      "bothDrawGames": 9,
+      "mirroredPairOutcomes": {
+        "bothAWins": 25,
+        "bothBWins": 83,
+        "splitWins": 89,
+        "bothDraw": 0,
+        "mixedDraw": 9
+      },
+      "addedRareBattleRate": 0.5145631067961165,
+      "addedRareSupportRate": 0.4854368932038835,
+      "addedRareSupportUsesPerPair": 0.970873786407767,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.279126213592233
+    },
+    "3to4|r-green-great-fairy": {
+      "pairedScenarios": 192,
+      "actualMatches": 384,
+      "A": {
+        "wins": 138,
+        "losses": 242,
+        "draws": 4,
+        "winRate": 0.359375,
+        "avgRounds": 22.033854166666668
+      },
+      "B": {
+        "wins": 242,
+        "losses": 138,
+        "draws": 4,
+        "winRate": 0.6302083333333334,
+        "avgRounds": 22.033854166666668
+      },
+      "winRateDifferenceAminusB": -0.2708333333333333,
+      "AWinBLose": 138,
+      "ALoseBWin": 242,
+      "bothDrawGames": 4,
+      "mirroredPairOutcomes": {
+        "bothAWins": 28,
+        "bothBWins": 79,
+        "splitWins": 81,
+        "bothDraw": 0,
+        "mixedDraw": 4
+      },
+      "addedRareBattleRate": 0.265625,
+      "addedRareSupportRate": 0.734375,
+      "addedRareSupportUsesPerPair": 1.46875,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.2708333333333333
+    },
+    "3to4|r-blue-sealer": {
+      "pairedScenarios": 208,
+      "actualMatches": 416,
+      "A": {
+        "wins": 178,
+        "losses": 232,
+        "draws": 6,
+        "winRate": 0.42788461538461536,
+        "avgRounds": 21.817307692307693
+      },
+      "B": {
+        "wins": 232,
+        "losses": 178,
+        "draws": 6,
+        "winRate": 0.5576923076923077,
+        "avgRounds": 21.817307692307693
+      },
+      "winRateDifferenceAminusB": -0.12980769230769232,
+      "AWinBLose": 178,
+      "ALoseBWin": 232,
+      "bothDrawGames": 6,
+      "mirroredPairOutcomes": {
+        "bothAWins": 43,
+        "bothBWins": 71,
+        "splitWins": 88,
+        "bothDraw": 0,
+        "mixedDraw": 6
+      },
+      "addedRareBattleRate": 0.46153846153846156,
+      "addedRareSupportRate": 0.5384615384615384,
+      "addedRareSupportUsesPerPair": 1.0769230769230769,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.12980769230769232
+    },
+    "3to5|r-green-paladin": {
+      "pairedScenarios": 426,
+      "actualMatches": 852,
+      "A": {
+        "wins": 257,
+        "losses": 578,
+        "draws": 17,
+        "winRate": 0.30164319248826293,
+        "avgRounds": 21.836854460093896
+      },
+      "B": {
+        "wins": 578,
+        "losses": 257,
+        "draws": 17,
+        "winRate": 0.6784037558685446,
+        "avgRounds": 21.836854460093896
+      },
+      "winRateDifferenceAminusB": -0.3767605633802817,
+      "AWinBLose": 257,
+      "ALoseBWin": 578,
+      "bothDrawGames": 17,
+      "mirroredPairOutcomes": {
+        "bothAWins": 43,
+        "bothBWins": 202,
+        "splitWins": 165,
+        "bothDraw": 0,
+        "mixedDraw": 16
+      },
+      "addedRareBattleRate": 0.4765258215962441,
+      "addedRareSupportRate": 0.5234741784037559,
+      "addedRareSupportUsesPerPair": 1.0469483568075117,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.3767605633802817
+    },
+    "3to5|r-blue-illusionist": {
+      "pairedScenarios": 415,
+      "actualMatches": 830,
+      "A": {
+        "wins": 327,
+        "losses": 486,
+        "draws": 17,
+        "winRate": 0.39397590361445783,
+        "avgRounds": 21.92168674698795
+      },
+      "B": {
+        "wins": 486,
+        "losses": 327,
+        "draws": 17,
+        "winRate": 0.5855421686746988,
+        "avgRounds": 21.92168674698795
+      },
+      "winRateDifferenceAminusB": -0.19156626506024096,
+      "AWinBLose": 327,
+      "ALoseBWin": 486,
+      "bothDrawGames": 17,
+      "mirroredPairOutcomes": {
+        "bothAWins": 83,
+        "bothBWins": 160,
+        "splitWins": 155,
+        "bothDraw": 0,
+        "mixedDraw": 17
+      },
+      "addedRareBattleRate": 0.4963855421686747,
+      "addedRareSupportRate": 0.5036144578313253,
+      "addedRareSupportUsesPerPair": 0.9903614457831326,
+      "addedRareSupportUseRate": 0.9832535885167464,
+      "winRateDifferenceBminusA": 0.19156626506024096
+    },
+    "3to5|r-green-beast-king": {
+      "pairedScenarios": 419,
+      "actualMatches": 838,
+      "A": {
+        "wins": 270,
+        "losses": 554,
+        "draws": 14,
+        "winRate": 0.3221957040572792,
+        "avgRounds": 21.74821002386635
+      },
+      "B": {
+        "wins": 554,
+        "losses": 270,
+        "draws": 14,
+        "winRate": 0.6610978520286396,
+        "avgRounds": 21.74821002386635
+      },
+      "winRateDifferenceAminusB": -0.33890214797136037,
+      "AWinBLose": 270,
+      "ALoseBWin": 554,
+      "bothDrawGames": 14,
+      "mirroredPairOutcomes": {
+        "bothAWins": 54,
+        "bothBWins": 194,
+        "splitWins": 157,
+        "bothDraw": 0,
+        "mixedDraw": 14
+      },
+      "addedRareBattleRate": 0.477326968973747,
+      "addedRareSupportRate": 0.522673031026253,
+      "addedRareSupportUsesPerPair": 1.0429594272076372,
+      "addedRareSupportUseRate": 0.997716894977169,
+      "winRateDifferenceBminusA": 0.33890214797136037
+    },
+    "3to5|r-red-reverse-swordsman": {
+      "pairedScenarios": 425,
+      "actualMatches": 850,
+      "A": {
+        "wins": 275,
+        "losses": 557,
+        "draws": 18,
+        "winRate": 0.3235294117647059,
+        "avgRounds": 21.605882352941176
+      },
+      "B": {
+        "wins": 557,
+        "losses": 275,
+        "draws": 18,
+        "winRate": 0.6552941176470588,
+        "avgRounds": 21.605882352941176
+      },
+      "winRateDifferenceAminusB": -0.33176470588235296,
+      "AWinBLose": 275,
+      "ALoseBWin": 557,
+      "bothDrawGames": 18,
+      "mirroredPairOutcomes": {
+        "bothAWins": 51,
+        "bothBWins": 188,
+        "splitWins": 169,
+        "bothDraw": 0,
+        "mixedDraw": 17
+      },
+      "addedRareBattleRate": 0.5576470588235294,
+      "addedRareSupportRate": 0.4423529411764706,
+      "addedRareSupportUsesPerPair": 0.8847058823529412,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.33176470588235296
+    },
+    "3to5|r-white-arbiter": {
+      "pairedScenarios": 376,
+      "actualMatches": 752,
+      "A": {
+        "wins": 299,
+        "losses": 441,
+        "draws": 12,
+        "winRate": 0.3976063829787234,
+        "avgRounds": 21.5625
+      },
+      "B": {
+        "wins": 441,
+        "losses": 299,
+        "draws": 12,
+        "winRate": 0.586436170212766,
+        "avgRounds": 21.5625
+      },
+      "winRateDifferenceAminusB": -0.18882978723404256,
+      "AWinBLose": 299,
+      "ALoseBWin": 441,
+      "bothDrawGames": 12,
+      "mirroredPairOutcomes": {
+        "bothAWins": 70,
+        "bothBWins": 140,
+        "splitWins": 154,
+        "bothDraw": 0,
+        "mixedDraw": 12
+      },
+      "addedRareBattleRate": 0.4946808510638298,
+      "addedRareSupportRate": 0.5053191489361702,
+      "addedRareSupportUsesPerPair": 1.0106382978723405,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.18882978723404256
+    },
+    "3to5|r-blue-sea-king": {
+      "pairedScenarios": 439,
+      "actualMatches": 878,
+      "A": {
+        "wins": 333,
+        "losses": 524,
+        "draws": 21,
+        "winRate": 0.3792710706150342,
+        "avgRounds": 21.831435079726653
+      },
+      "B": {
+        "wins": 524,
+        "losses": 333,
+        "draws": 21,
+        "winRate": 0.5968109339407744,
+        "avgRounds": 21.831435079726653
+      },
+      "winRateDifferenceAminusB": -0.21753986332574032,
+      "AWinBLose": 333,
+      "ALoseBWin": 524,
+      "bothDrawGames": 21,
+      "mirroredPairOutcomes": {
+        "bothAWins": 76,
+        "bothBWins": 168,
+        "splitWins": 174,
+        "bothDraw": 0,
+        "mixedDraw": 21
+      },
+      "addedRareBattleRate": 0.4783599088838269,
+      "addedRareSupportRate": 0.5216400911161732,
+      "addedRareSupportUsesPerPair": 1.0432801822323463,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.21753986332574032
+    },
+    "3to5|r-white-sword-saint": {
+      "pairedScenarios": 437,
+      "actualMatches": 874,
+      "A": {
+        "wins": 300,
+        "losses": 556,
+        "draws": 18,
+        "winRate": 0.34324942791762014,
+        "avgRounds": 21.44279176201373
+      },
+      "B": {
+        "wins": 556,
+        "losses": 300,
+        "draws": 18,
+        "winRate": 0.6361556064073226,
+        "avgRounds": 21.44279176201373
+      },
+      "winRateDifferenceAminusB": -0.2929061784897025,
+      "AWinBLose": 300,
+      "ALoseBWin": 556,
+      "bothDrawGames": 18,
+      "mirroredPairOutcomes": {
+        "bothAWins": 70,
+        "bothBWins": 194,
+        "splitWins": 155,
+        "bothDraw": 0,
+        "mixedDraw": 18
+      },
+      "addedRareBattleRate": 0.47368421052631576,
+      "addedRareSupportRate": 0.5263157894736842,
+      "addedRareSupportUsesPerPair": 1.0526315789473684,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.2929061784897025
+    },
+    "3to5|r-white-hunter": {
+      "pairedScenarios": 435,
+      "actualMatches": 870,
+      "A": {
+        "wins": 280,
+        "losses": 575,
+        "draws": 15,
+        "winRate": 0.3218390804597701,
+        "avgRounds": 21.612643678160918
+      },
+      "B": {
+        "wins": 575,
+        "losses": 280,
+        "draws": 15,
+        "winRate": 0.6609195402298851,
+        "avgRounds": 21.612643678160918
+      },
+      "winRateDifferenceAminusB": -0.3390804597701149,
+      "AWinBLose": 280,
+      "ALoseBWin": 575,
+      "bothDrawGames": 15,
+      "mirroredPairOutcomes": {
+        "bothAWins": 52,
+        "bothBWins": 199,
+        "splitWins": 169,
+        "bothDraw": 0,
+        "mixedDraw": 15
+      },
+      "addedRareBattleRate": 0.4689655172413793,
+      "addedRareSupportRate": 0.5310344827586206,
+      "addedRareSupportUsesPerPair": 1.0620689655172413,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.3390804597701149
+    },
+    "3to5|r-red-revenge-knight": {
+      "pairedScenarios": 418,
+      "actualMatches": 836,
+      "A": {
+        "wins": 292,
+        "losses": 524,
+        "draws": 20,
+        "winRate": 0.3492822966507177,
+        "avgRounds": 21.3444976076555
+      },
+      "B": {
+        "wins": 524,
+        "losses": 292,
+        "draws": 20,
+        "winRate": 0.6267942583732058,
+        "avgRounds": 21.3444976076555
+      },
+      "winRateDifferenceAminusB": -0.27751196172248804,
+      "AWinBLose": 292,
+      "ALoseBWin": 524,
+      "bothDrawGames": 20,
+      "mirroredPairOutcomes": {
+        "bothAWins": 63,
+        "bothBWins": 178,
+        "splitWins": 158,
+        "bothDraw": 0,
+        "mixedDraw": 19
+      },
+      "addedRareBattleRate": 0.4904306220095694,
+      "addedRareSupportRate": 0.5095693779904307,
+      "addedRareSupportUsesPerPair": 1.0191387559808613,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.27751196172248804
+    },
+    "3to5|r-green-great-fairy": {
+      "pairedScenarios": 386,
+      "actualMatches": 772,
+      "A": {
+        "wins": 250,
+        "losses": 506,
+        "draws": 16,
+        "winRate": 0.3238341968911917,
+        "avgRounds": 21.537564766839377
+      },
+      "B": {
+        "wins": 506,
+        "losses": 250,
+        "draws": 16,
+        "winRate": 0.655440414507772,
+        "avgRounds": 21.537564766839377
+      },
+      "winRateDifferenceAminusB": -0.3316062176165803,
+      "AWinBLose": 250,
+      "ALoseBWin": 506,
+      "bothDrawGames": 16,
+      "mirroredPairOutcomes": {
+        "bothAWins": 53,
+        "bothBWins": 179,
+        "splitWins": 139,
+        "bothDraw": 0,
+        "mixedDraw": 15
+      },
+      "addedRareBattleRate": 0.27979274611398963,
+      "addedRareSupportRate": 0.7202072538860104,
+      "addedRareSupportUsesPerPair": 1.4404145077720207,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.3316062176165803
+    },
+    "3to5|r-blue-sealer": {
+      "pairedScenarios": 395,
+      "actualMatches": 790,
+      "A": {
+        "wins": 320,
+        "losses": 454,
+        "draws": 16,
+        "winRate": 0.4050632911392405,
+        "avgRounds": 21.841772151898734
+      },
+      "B": {
+        "wins": 454,
+        "losses": 320,
+        "draws": 16,
+        "winRate": 0.5746835443037974,
+        "avgRounds": 21.841772151898734
+      },
+      "winRateDifferenceAminusB": -0.16962025316455695,
+      "AWinBLose": 320,
+      "ALoseBWin": 454,
+      "bothDrawGames": 16,
+      "mirroredPairOutcomes": {
+        "bothAWins": 76,
+        "bothBWins": 142,
+        "splitWins": 161,
+        "bothDraw": 0,
+        "mixedDraw": 16
+      },
+      "addedRareBattleRate": 0.4506329113924051,
+      "addedRareSupportRate": 0.549367088607595,
+      "addedRareSupportUsesPerPair": 1.09873417721519,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.16962025316455695
+    },
+    "3to5|r-red-fist-king": {
+      "pairedScenarios": 429,
+      "actualMatches": 858,
+      "A": {
+        "wins": 271,
+        "losses": 571,
+        "draws": 16,
+        "winRate": 0.31585081585081587,
+        "avgRounds": 21.175990675990676
+      },
+      "B": {
+        "wins": 571,
+        "losses": 271,
+        "draws": 16,
+        "winRate": 0.6655011655011654,
+        "avgRounds": 21.175990675990676
+      },
+      "winRateDifferenceAminusB": -0.34965034965034963,
+      "AWinBLose": 271,
+      "ALoseBWin": 571,
+      "bothDrawGames": 16,
+      "mirroredPairOutcomes": {
+        "bothAWins": 49,
+        "bothBWins": 198,
+        "splitWins": 166,
+        "bothDraw": 0,
+        "mixedDraw": 16
+      },
+      "addedRareBattleRate": 0.5384615384615384,
+      "addedRareSupportRate": 0.46153846153846156,
+      "addedRareSupportUsesPerPair": 0.9230769230769231,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.34965034965034963
+    },
+    "4to5|r-blue-illusionist": {
+      "pairedScenarios": 205,
+      "actualMatches": 410,
+      "A": {
+        "wins": 200,
+        "losses": 204,
+        "draws": 6,
+        "winRate": 0.4878048780487805,
+        "avgRounds": 21.646341463414632
+      },
+      "B": {
+        "wins": 204,
+        "losses": 200,
+        "draws": 6,
+        "winRate": 0.4975609756097561,
+        "avgRounds": 21.646341463414632
+      },
+      "winRateDifferenceAminusB": -0.00975609756097561,
+      "AWinBLose": 200,
+      "ALoseBWin": 204,
+      "bothDrawGames": 6,
+      "mirroredPairOutcomes": {
+        "bothAWins": 53,
+        "bothBWins": 55,
+        "splitWins": 91,
+        "bothDraw": 0,
+        "mixedDraw": 6
+      },
+      "addedRareBattleRate": 0.5560975609756098,
+      "addedRareSupportRate": 0.44390243902439025,
+      "addedRareSupportUsesPerPair": 0.8829268292682927,
+      "addedRareSupportUseRate": 0.9945054945054945,
+      "winRateDifferenceBminusA": 0.00975609756097561
+    },
+    "4to5|r-red-revenge-knight": {
+      "pairedScenarios": 220,
+      "actualMatches": 440,
+      "A": {
+        "wins": 175,
+        "losses": 255,
+        "draws": 10,
+        "winRate": 0.3977272727272727,
+        "avgRounds": 21.779545454545456
+      },
+      "B": {
+        "wins": 255,
+        "losses": 175,
+        "draws": 10,
+        "winRate": 0.5795454545454546,
+        "avgRounds": 21.779545454545456
+      },
+      "winRateDifferenceAminusB": -0.18181818181818182,
+      "AWinBLose": 175,
+      "ALoseBWin": 255,
+      "bothDrawGames": 10,
+      "mirroredPairOutcomes": {
+        "bothAWins": 47,
+        "bothBWins": 87,
+        "splitWins": 76,
+        "bothDraw": 0,
+        "mixedDraw": 10
+      },
+      "addedRareBattleRate": 0.4954545454545455,
+      "addedRareSupportRate": 0.5045454545454545,
+      "addedRareSupportUsesPerPair": 1.009090909090909,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.18181818181818182
+    },
+    "4to5|r-red-reverse-swordsman": {
+      "pairedScenarios": 206,
+      "actualMatches": 412,
+      "A": {
+        "wins": 174,
+        "losses": 228,
+        "draws": 10,
+        "winRate": 0.4223300970873786,
+        "avgRounds": 21.631067961165048
+      },
+      "B": {
+        "wins": 228,
+        "losses": 174,
+        "draws": 10,
+        "winRate": 0.5533980582524272,
+        "avgRounds": 21.631067961165048
+      },
+      "winRateDifferenceAminusB": -0.13106796116504854,
+      "AWinBLose": 174,
+      "ALoseBWin": 228,
+      "bothDrawGames": 10,
+      "mirroredPairOutcomes": {
+        "bothAWins": 46,
+        "bothBWins": 72,
+        "splitWins": 78,
+        "bothDraw": 0,
+        "mixedDraw": 10
+      },
+      "addedRareBattleRate": 0.5,
+      "addedRareSupportRate": 0.5,
+      "addedRareSupportUsesPerPair": 1,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.13106796116504854
+    },
+    "4to5|r-blue-sealer": {
+      "pairedScenarios": 210,
+      "actualMatches": 420,
+      "A": {
+        "wins": 210,
+        "losses": 202,
+        "draws": 8,
+        "winRate": 0.5,
+        "avgRounds": 21.72142857142857
+      },
+      "B": {
+        "wins": 202,
+        "losses": 210,
+        "draws": 8,
+        "winRate": 0.48095238095238096,
+        "avgRounds": 21.72142857142857
+      },
+      "winRateDifferenceAminusB": 0.01904761904761905,
+      "AWinBLose": 210,
+      "ALoseBWin": 202,
+      "bothDrawGames": 8,
+      "mirroredPairOutcomes": {
+        "bothAWins": 53,
+        "bothBWins": 51,
+        "splitWins": 98,
+        "bothDraw": 0,
+        "mixedDraw": 8
+      },
+      "addedRareBattleRate": 0.4714285714285714,
+      "addedRareSupportRate": 0.5285714285714286,
+      "addedRareSupportUsesPerPair": 1.0571428571428572,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": -0.01904761904761905
+    },
+    "4to5|r-green-paladin": {
+      "pairedScenarios": 197,
+      "actualMatches": 394,
+      "A": {
+        "wins": 165,
+        "losses": 210,
+        "draws": 19,
+        "winRate": 0.41878172588832485,
+        "avgRounds": 21.451776649746193
+      },
+      "B": {
+        "wins": 210,
+        "losses": 165,
+        "draws": 19,
+        "winRate": 0.5329949238578681,
+        "avgRounds": 21.451776649746193
+      },
+      "winRateDifferenceAminusB": -0.11421319796954314,
+      "AWinBLose": 165,
+      "ALoseBWin": 210,
+      "bothDrawGames": 19,
+      "mirroredPairOutcomes": {
+        "bothAWins": 39,
+        "bothBWins": 62,
+        "splitWins": 77,
+        "bothDraw": 0,
+        "mixedDraw": 19
+      },
+      "addedRareBattleRate": 0.49746192893401014,
+      "addedRareSupportRate": 0.5025380710659898,
+      "addedRareSupportUsesPerPair": 1.0050761421319796,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.11421319796954314
+    },
+    "4to5|r-green-great-fairy": {
+      "pairedScenarios": 191,
+      "actualMatches": 382,
+      "A": {
+        "wins": 172,
+        "losses": 203,
+        "draws": 7,
+        "winRate": 0.450261780104712,
+        "avgRounds": 21.82198952879581
+      },
+      "B": {
+        "wins": 203,
+        "losses": 172,
+        "draws": 7,
+        "winRate": 0.5314136125654451,
+        "avgRounds": 21.82198952879581
+      },
+      "winRateDifferenceAminusB": -0.08115183246073299,
+      "AWinBLose": 172,
+      "ALoseBWin": 203,
+      "bothDrawGames": 7,
+      "mirroredPairOutcomes": {
+        "bothAWins": 48,
+        "bothBWins": 65,
+        "splitWins": 71,
+        "bothDraw": 0,
+        "mixedDraw": 7
+      },
+      "addedRareBattleRate": 0.29842931937172773,
+      "addedRareSupportRate": 0.7015706806282722,
+      "addedRareSupportUsesPerPair": 1.4031413612565444,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.08115183246073299
+    },
+    "4to5|r-green-beast-king": {
+      "pairedScenarios": 211,
+      "actualMatches": 422,
+      "A": {
+        "wins": 148,
+        "losses": 262,
+        "draws": 12,
+        "winRate": 0.35071090047393366,
+        "avgRounds": 21.959715639810426
+      },
+      "B": {
+        "wins": 262,
+        "losses": 148,
+        "draws": 12,
+        "winRate": 0.6208530805687204,
+        "avgRounds": 21.959715639810426
+      },
+      "winRateDifferenceAminusB": -0.27014218009478674,
+      "AWinBLose": 148,
+      "ALoseBWin": 262,
+      "bothDrawGames": 12,
+      "mirroredPairOutcomes": {
+        "bothAWins": 27,
+        "bothBWins": 80,
+        "splitWins": 92,
+        "bothDraw": 0,
+        "mixedDraw": 12
+      },
+      "addedRareBattleRate": 0.5118483412322274,
+      "addedRareSupportRate": 0.4881516587677725,
+      "addedRareSupportUsesPerPair": 0.976303317535545,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.27014218009478674
+    },
+    "4to5|r-blue-sea-king": {
+      "pairedScenarios": 199,
+      "actualMatches": 398,
+      "A": {
+        "wins": 172,
+        "losses": 211,
+        "draws": 15,
+        "winRate": 0.4321608040201005,
+        "avgRounds": 21.959798994974875
+      },
+      "B": {
+        "wins": 211,
+        "losses": 172,
+        "draws": 15,
+        "winRate": 0.5301507537688442,
+        "avgRounds": 21.959798994974875
+      },
+      "winRateDifferenceAminusB": -0.09798994974874371,
+      "AWinBLose": 172,
+      "ALoseBWin": 211,
+      "bothDrawGames": 15,
+      "mirroredPairOutcomes": {
+        "bothAWins": 40,
+        "bothBWins": 60,
+        "splitWins": 85,
+        "bothDraw": 0,
+        "mixedDraw": 14
+      },
+      "addedRareBattleRate": 0.4723618090452261,
+      "addedRareSupportRate": 0.5276381909547738,
+      "addedRareSupportUsesPerPair": 1.0552763819095476,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.09798994974874371
+    },
+    "4to5|r-white-hunter": {
+      "pairedScenarios": 211,
+      "actualMatches": 422,
+      "A": {
+        "wins": 167,
+        "losses": 245,
+        "draws": 10,
+        "winRate": 0.3957345971563981,
+        "avgRounds": 22.075829383886255
+      },
+      "B": {
+        "wins": 245,
+        "losses": 167,
+        "draws": 10,
+        "winRate": 0.580568720379147,
+        "avgRounds": 22.075829383886255
+      },
+      "winRateDifferenceAminusB": -0.1848341232227488,
+      "AWinBLose": 167,
+      "ALoseBWin": 245,
+      "bothDrawGames": 10,
+      "mirroredPairOutcomes": {
+        "bothAWins": 40,
+        "bothBWins": 76,
+        "splitWins": 85,
+        "bothDraw": 0,
+        "mixedDraw": 10
+      },
+      "addedRareBattleRate": 0.5023696682464455,
+      "addedRareSupportRate": 0.4976303317535545,
+      "addedRareSupportUsesPerPair": 0.995260663507109,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.1848341232227488
+    },
+    "4to5|r-white-sword-saint": {
+      "pairedScenarios": 235,
+      "actualMatches": 470,
+      "A": {
+        "wins": 191,
+        "losses": 273,
+        "draws": 6,
+        "winRate": 0.40638297872340423,
+        "avgRounds": 21.804255319148936
+      },
+      "B": {
+        "wins": 273,
+        "losses": 191,
+        "draws": 6,
+        "winRate": 0.5808510638297872,
+        "avgRounds": 21.804255319148936
+      },
+      "winRateDifferenceAminusB": -0.17446808510638298,
+      "AWinBLose": 191,
+      "ALoseBWin": 273,
+      "bothDrawGames": 6,
+      "mirroredPairOutcomes": {
+        "bothAWins": 45,
+        "bothBWins": 87,
+        "splitWins": 97,
+        "bothDraw": 0,
+        "mixedDraw": 6
+      },
+      "addedRareBattleRate": 0.5276595744680851,
+      "addedRareSupportRate": 0.4723404255319149,
+      "addedRareSupportUsesPerPair": 0.9446808510638298,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.17446808510638298
+    },
+    "4to5|r-white-arbiter": {
+      "pairedScenarios": 227,
+      "actualMatches": 454,
+      "A": {
+        "wins": 241,
+        "losses": 200,
+        "draws": 13,
+        "winRate": 0.5308370044052864,
+        "avgRounds": 21.863436123348016
+      },
+      "B": {
+        "wins": 200,
+        "losses": 241,
+        "draws": 13,
+        "winRate": 0.44052863436123346,
+        "avgRounds": 21.863436123348016
+      },
+      "winRateDifferenceAminusB": 0.09030837004405286,
+      "AWinBLose": 241,
+      "ALoseBWin": 200,
+      "bothDrawGames": 13,
+      "mirroredPairOutcomes": {
+        "bothAWins": 70,
+        "bothBWins": 53,
+        "splitWins": 92,
+        "bothDraw": 0,
+        "mixedDraw": 12
+      },
+      "addedRareBattleRate": 0.5198237885462555,
+      "addedRareSupportRate": 0.4801762114537445,
+      "addedRareSupportUsesPerPair": 0.960352422907489,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": -0.09030837004405286
+    },
+    "4to5|r-red-fist-king": {
+      "pairedScenarios": 188,
+      "actualMatches": 376,
+      "A": {
+        "wins": 147,
+        "losses": 218,
+        "draws": 11,
+        "winRate": 0.39095744680851063,
+        "avgRounds": 21.65159574468085
+      },
+      "B": {
+        "wins": 218,
+        "losses": 147,
+        "draws": 11,
+        "winRate": 0.5797872340425532,
+        "avgRounds": 21.65159574468085
+      },
+      "winRateDifferenceAminusB": -0.18882978723404256,
+      "AWinBLose": 147,
+      "ALoseBWin": 218,
+      "bothDrawGames": 11,
+      "mirroredPairOutcomes": {
+        "bothAWins": 31,
+        "bothBWins": 67,
+        "splitWins": 79,
+        "bothDraw": 0,
+        "mixedDraw": 11
+      },
+      "addedRareBattleRate": 0.4308510638297872,
+      "addedRareSupportRate": 0.5691489361702128,
+      "addedRareSupportUsesPerPair": 1.1382978723404256,
+      "addedRareSupportUseRate": 1,
+      "winRateDifferenceBminusA": 0.18882978723404256
+    }
+  },
+  "formationAI": "Five battle cards are selected independently for each 15-card pool by a noisy battle-value heuristic using HP, average dice, passive count, and trigger count. Noise permits both Rare battle and Rare support roles; placement rates are measured, not prescribed.",
+  "limits": [
+    "All battle resolution, card effects, support use, RPS and dice outcomes use the existing BattleEngine and card data.",
+    "Formation choice is a simulation heuristic, not a player-selected optimal lineup; card values are not modified.",
+    "KO successors follow the game engine fixed cyclic order.",
+    "Browser rendering/input timing is not simulated."
+  ]
+}

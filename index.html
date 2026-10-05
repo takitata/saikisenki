@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101823">
+  <title>骰戦記 — 編成</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=friend-test-online-battle-1">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="骰戦記 ホーム"><span class="brand-mark">骰</span><span>骰戦記<small>ROLL · DUEL · DECK</small></span></a>
+      <div class="phase"><span class="phase-dot"></span> <span id="phaseNumber">PHASE 00</span> <b id="phaseLabel">スタート</b></div>
+      <div class="topbar-right">FRIEND TEST <span>●</span></div>
+    </header>
+
+    <main>
+      <section id="startView" class="view start-view">
+        <div class="start-panel">
+          <div class="dice-stamp start-stamp" aria-hidden="true"><span>✦</span><b>骰</b><i>ROLL<br>YOUR FATE</i></div>
+          <p class="eyebrow">FRIEND TEST VERSION <span>— PROTOTYPE</span></p>
+          <h1>骰戦記</h1>
+          <p class="start-description">じゃんけん＋ダイス＋カードのバトルゲーム。毎ラウンド、サポートを使うか決めてからじゃんけん。じゃんけん結果でダイスの目が変化し、その出目でカードが攻撃します。相手のバトルカードをすべて倒せば勝利です。</p>
+          <button id="quickStartButton" class="primary-button start-primary">CPUと対戦 <span>→</span></button>
+          <button id="onlineModeButton" class="secondary-button start-secondary">オンライン対戦</button>
+          <button id="manualStartButton" class="text-button start-manual">カードを選んでCPUと対戦</button>
+          <p class="test-disclaimer">テストプレイ版です。カードやバランスは今後変更される場合があります。</p>
+        </div>
+      </section>
+
+      <section id="onlineView" class="view online-view" hidden>
+        <div class="online-panel">
+          <p class="eyebrow">ONLINE BATTLE <span>— ROOM LOBBY</span></p>
+          <h1>友達と対戦</h1>
+          <p class="online-copy">ルームを作ってIDを共有するか、友達のルームIDを入力してください。</p>
+          <div class="online-connection"><i id="onlineConnectionDot"></i><span id="onlineConnectionStatus">接続状態を確認しています</span><small id="onlineAuthStatus">匿名認証 待機中</small></div>
+          <div id="onlineLobbyActions" class="online-lobby-actions">
+            <button id="createRoomButton" class="primary-button">部屋を作る <span>＋</span></button>
+            <div class="online-join"><label for="roomIdInput">ルームID</label><div><input id="roomIdInput" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="6桁のID"><button id="joinRoomButton" class="secondary-button">部屋に参加する <span>→</span></button></div></div>
+          </div>
+          <div id="onlineRoomPanel" class="online-room-panel" hidden>
+            <span class="panel-kicker">ROOM ID</span>
+            <strong id="onlineRoomId" class="online-room-id">000000</strong>
+            <p id="onlineRoomMessage" class="online-room-message">対戦相手を待っています</p>
+            <div class="online-player-status"><span><i class="live-dot"></i>あなた</span><span id="onlineOpponentStatus"><i class="waiting-dot"></i>対戦相手を待っています</span></div>
+            <p class="online-room-note">2人が編成を確定するとオンラインバトルが始まります。</p>
+            <div class="online-room-actions"><button id="newRoomButton" class="secondary-button" hidden>新しいルームを作る</button><button id="exitRoomButton" class="secondary-button">ルームを退出</button></div>
+          </div>
+          <section id="onlineFormationPanel" class="online-formation-panel" hidden>
+            <p class="eyebrow">ONLINE BATTLE <span>— CARD FORMATION</span></p>
+            <h2>カード編成</h2>
+            <p class="online-copy">配られた15枚からバトルカードを1〜5枚選んでください。残りはサポートになります。</p>
+            <div class="online-formation-stats"><b>Rare <span id="onlineRareCount">—</span>枚</b><b>バトル：<span id="onlineBattleCount">0</span> / 5</b><b>サポート：<span id="onlineSupportCount">15</span></b></div>
+            <div id="onlineCardGrid" class="online-card-grid" aria-label="オンライン用の自分のカード"></div>
+            <p id="onlineFormationError" class="online-error" role="status" aria-live="polite"></p>
+            <button id="onlineAutoFormationButton" class="secondary-button online-auto-formation">編成もおまかせ</button>
+            <button id="onlineReadyButton" class="primary-button" disabled>編成完了</button>
+            <div id="onlineReadyStatus" class="online-ready-status" aria-live="polite"><p>あなた：編成中…</p><p>相手：編成中…</p></div>
+          </section>
+          <p id="onlineError" class="online-error" role="status" aria-live="polite"></p>
+          <button id="onlineBackButton" class="secondary-button online-back">← モード選択へ戻る（ルームは保持）</button>
+        </div>
+      </section>
+
+      <section id="poolView" class="view" hidden>
+        <div class="hero">
+          <div><p class="eyebrow">CARD COLLECTION <span>— 01 / 03</span></p>
+            <h1>今回の所持カード<br><em>15枚を選ぶ。</em></h1>
+            <p class="hero-copy">Normal・Rare全52種類から、今回の対戦で使うカードを選択します。<br class="desktop-only">ここで選んだカードは、次の編成画面でバトルかサポートに振り分けます。</p>
+          </div>
+          <div class="dice-stamp" aria-hidden="true"><span>✦</span><b>52</b><i>DEV<br>POOL</i></div>
+        </div>
+        <div class="roster-bar">
+          <div class="roster-title"><span class="live-dot"></span><div><b>カードプール</b><small>自分で15枚選択</small></div></div>
+          <div class="roster-stats"><span><b id="poolCount">15</b><small>/ 15 選択</small></span><i></i><span><b>52</b><small>種類</small></span></div>
+          <details class="pool-shortcuts test-tools"><summary>テスト用ショートカット</summary><div class="pool-shortcut-actions"><button id="randomPlayerDeckButton" class="secondary-button">自分のデッキをランダム生成</button><button id="prepareBothRandomButton" class="primary-button">両者ランダムで対戦準備</button><button id="poolRareShortcut" class="secondary-button">全Rare＋Normal3枚</button><button id="poolReset" class="secondary-button">選択をクリア</button></div></details>
+        </div>
+        <div class="toolbar">
+          <div class="filter-row" aria-label="属性フィルター">
+            <button class="filter active" data-filter="all">すべて <span id="poolFilterAllCount">52</span></button>
+            <button class="filter" data-filter="red"><i class="attr-dot red"></i>赤</button>
+            <button class="filter" data-filter="blue"><i class="attr-dot blue"></i>青</button>
+            <button class="filter" data-filter="green"><i class="attr-dot green"></i>緑</button>
+            <button class="filter" data-filter="white"><i class="attr-dot white"></i>白</button>
+          </div>
+          <div class="roster-label">SELECT 15 DISTINCT CARDS</div>
+        </div>
+        <section id="poolGrid" class="card-grid" aria-label="選択可能な全カード一覧"></section>
+        <div class="bottom-bar">
+          <div class="bottom-summary"><span class="summary-icon">✦</span><span><b>所持カード <span id="poolBottomCount">15</span> / 15</b><small>Normal 40 · Rare 12</small></span></div>
+          <p class="hint">カードをタップして選択 <span>·</span> 15枚選択すると編成へ進めます</p>
+          <button id="poolContinue" class="primary-button">編成画面へ <span>→</span></button>
+        </div>
+      </section>
+
+      <section id="buildView" class="view" hidden>
+        <div class="hero">
+          <div><p class="eyebrow">YOUR COLLECTION <span>— 01 / 03</span></p>
+            <h1>戦場に出る<br><em>カードを選べ。</em></h1>
+            <p class="hero-copy">バトルカードを1〜5枚選びます。<br class="desktop-only">選ばなかったカードはサポートカードになります。</p>
+          </div>
+          <div class="dice-stamp" aria-hidden="true"><span>✦</span><b>6</b><i>ROLL<br>YOUR FATE</i></div>
+        </div>
+
+        <div class="roster-bar">
+          <div class="roster-title"><span class="live-dot"></span><div><b>所持カード</b><small>YOUR ROSTER</small></div></div>
+          <div class="roster-stats"><span><b id="ownedCount">15</b><small>所持</small></span><i></i><span><b id="playerRareCount">0</b><small>Rare</small></span><i></i><span><b id="battleCount">0</b><small>バトル</small></span><i></i><span><b id="supportCount">15</b><small>サポート</small></span></div>
+          <div class="selection-meter"><div class="meter-track"><span id="meterFill"></span></div><small><b id="meterLabel">0</b> / 5 SELECTED</small></div>
+        </div>
+
+        <div class="toolbar">
+          <div class="filter-row" aria-label="属性フィルター">
+            <button class="filter active" data-filter="all">すべて <span id="filterAllCount">15</span></button>
+            <button class="filter" data-filter="red"><i class="attr-dot red"></i>赤</button>
+            <button class="filter" data-filter="blue"><i class="attr-dot blue"></i>青</button>
+            <button class="filter" data-filter="green"><i class="attr-dot green"></i>緑</button>
+            <button class="filter" data-filter="white"><i class="attr-dot white"></i>白</button>
+          </div>
+          <div class="roster-label">15 CARDS <span>·</span> TAP TO SELECT <button id="autoFormationButton" class="text-button">編成もおまかせ</button> <button id="poolEditButton" class="text-button">カードプールを編集</button></div>
+        </div>
+
+        <section id="cardGrid" class="card-grid" aria-label="所持カード一覧"></section>
+        <div class="bottom-bar">
+          <div class="bottom-summary"><span class="summary-icon">⚔</span><span><b id="bottomBattle">バトル 0 / 5</b><small id="bottomSupport">サポート 15</small></span></div>
+          <p class="hint"><kbd>5</kbd>枚選択 <span>·</span> カードをタップしてバトルに配置</p>
+          <button id="startButton" class="primary-button" disabled>編成を確認 <span>→</span></button>
+        </div>
+      </section>
+
+      <section id="completeView" class="view complete-view" hidden>
+        <div class="complete-heading"><span class="success-mark">✓</span><p class="eyebrow">FORMATION LOCKED <span>— READY</span></p><h1>編成<em>完了</em></h1><p>カードの配置が決まった。戦場へ出る準備はできている。 <b id="playerRareSummary">Rare 0枚</b></p></div>
+        <div class="team-layout">
+          <section class="team-panel battle-panel"><div class="panel-heading"><div><span class="panel-kicker">01 — FRONTLINE</span><h2>バトルカード <small id="completeBattleCount">0枚</small></h2></div><span class="panel-symbol">⚔</span></div><div id="battleList" class="team-list"></div></section>
+          <section class="team-panel support-panel"><div class="panel-heading"><div><span class="panel-kicker">02 — RESERVE</span><h2>サポートカード <small id="completeSupportCount">0枚</small></h2></div><span class="panel-symbol">✦</span></div><div id="supportList" class="team-list"></div></section>
+        </div>
+        <section class="cpu-dev-preview" aria-label="CPUの開発用デッキ確認">
+          <div class="cpu-dev-heading"><div><span class="panel-kicker">OPPONENT PREVIEW — TEST VERSION</span><h2>対戦相手の編成 <small>テスト表示</small></h2><p>対戦前に相手のカードとサポートを確認できます。</p></div><div class="cpu-dev-actions"><b>Rare <span id="cpuRareCount">0</span>枚</b><details class="test-tools"><summary>テスト用操作</summary><button id="generateCpuDeckButton" class="secondary-button">相手デッキをランダム生成</button></details></div></div>
+          <div class="cpu-dev-columns"><div><h3>バトルカード <small>5枚</small></h3><div id="cpuBattlePreview" class="team-list"></div></div><div><h3>サポートカード <small>10枚</small></h3><div id="cpuSupportPreview" class="team-list"></div></div></div>
+        </section>
+        <div class="complete-footer"><p><span class="live-dot"></span> Normal・Rare能力とサポートを使用できます。</p><div class="complete-actions"><button id="backButton" class="secondary-button">← 編成画面へ戻る</button><button id="cpuStartButton" class="primary-button">対戦開始 <span>→</span></button></div></div>
+      </section>
+
+      <section id="battleView" class="view battle-view" hidden>
+        <div class="battle-titlebar"><div><p class="eyebrow">BATTLE PHASE <span>— NORMAL + RARE</span></p><h1 id="battleHeading">CPU <em>バトル</em></h1><p id="onlineBattleStatus" class="online-battle-status" aria-live="polite"></p></div><div class="round-badge"><small>NOW PLAYING</small><b id="roundNumber">ROUND 1</b></div><button id="battleBackButton" class="secondary-button">編成に戻る</button></div>
+        <div class="battle-arena"><div id="playerBattlePanel"></div><div class="arena-center"><span class="arena-vs">VS</span><div id="roundReveal"></div></div><div id="cpuBattlePanel"></div></div>
+        <section id="battleControls" class="battle-controls">
+          <div id="supportControls" class="support-controls"><div class="choice-heading"><span class="panel-kicker">ROUND START — SUPPORT</span><h2>サポートカードを選ぶ</h2><p>このラウンドに1枚使用するか、使わずに進みます。</p></div><div id="supportChoiceList" class="support-choice-list"></div><div id="supportPreview" class="support-preview">サポートを選ぶと効果が表示されます。</div><div class="support-actions"><button id="useSupportButton" class="primary-button" disabled>このサポートを使用 <span>→</span></button><button id="skipSupportButton" class="secondary-button">サポートを使わない</button></div></div>
+          <div id="handControls" class="hand-controls" hidden><div class="choice-heading"><span class="panel-kicker">CHOOSE YOUR HAND</span><h2>じゃんけんの手を選ぶ</h2><p id="handChoiceHelp">CPUの手は確定するまで表示されません。</p></div><div class="hand-buttons"><button class="hand-button hand-rock" data-hand="rock"><span>✊</span><b>グー</b><small>赤属性</small></button><button class="hand-button hand-scissors" data-hand="scissors"><span>✌</span><b>チョキ</b><small>緑属性</small></button><button class="hand-button hand-paper" data-hand="paper"><span>✋</span><b>パー</b><small>青属性</small></button></div></div>
+          <div id="diceControls" class="dice-controls" hidden><div class="choice-heading"><span class="panel-kicker">RAW DICE — REROLL</span><h2>生ダイスを確定する</h2><p id="diceChoiceSummary"></p></div><div class="dice-actions"><button id="rerollButton" class="secondary-button">振り直す</button><button id="keepDieButton" class="primary-button">この出目を使う <span>→</span></button></div></div>
+          <div id="reviveControls" class="revive-controls" hidden><div class="choice-heading"><span class="panel-kicker">GRAVEYARD — REVIVE</span><h2>復活するカードを選ぶ</h2><p id="reviveInstruction">選んだカードは最大HPの50%で元のバトル枠に戻ります。</p></div><div id="reviveChoiceList" class="revive-choice-list"></div></div>
+          <div id="nextRoundControls" class="next-round-controls" hidden><button id="nextRoundButton" class="primary-button next-round">次のラウンドへ <span>→</span></button></div>
+        </section>
+        <section id="battleResult" class="battle-result" hidden><div class="result-card"><span class="panel-kicker">BATTLE RESULT</span><strong id="resultWord">WIN</strong><p id="resultMessage"></p><div class="rematch-actions"><button id="randomPlayerAgainButton" class="primary-button">もう一度ランダム対戦 <span>↻</span></button><button id="sameCpuAgainButton" class="secondary-button">同じ相手と再戦</button><button id="newCpuAgainButton" class="secondary-button">新しい相手と編成はそのまま</button><button id="againButton" class="secondary-button">今のデッキを編成し直す</button></div></div></section>
+        <section class="battle-log-section"><div class="log-heading"><div><span class="panel-kicker">MATCH HISTORY</span><h2>ラウンドログ <small id="logCount">計算過程を記録</small></h2></div><span class="log-indicator"><i></i> LIVE</span></div><div id="battleLog" class="battle-log"><p class="log-empty">ラウンド結果はここに表示されます。</p></div></section>
+      </section>
+    </main>
+    <footer class="site-footer"><span>骰戦記 <i>·</i> PROTOTYPE 0.4</span><span>ROLL YOUR FATE</span></footer>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="cardInfoOverlay" class="card-info-overlay" hidden>
+    <section class="card-info-dialog" role="dialog" aria-modal="true" aria-labelledby="cardInfoTitle">
+      <header class="card-info-header"><span class="panel-kicker">CARD INFORMATION</span><button id="cardInfoCloseTop" class="secondary-button" type="button">閉じる</button></header>
+      <div id="cardInfoContent" class="card-info-content"></div>
+      <footer class="card-info-footer"><button id="cardInfoClose" class="primary-button" type="button">閉じる</button></footer>
+    </section>
+  </div>
+  <script src="cards.js"></script>
+  <script src="cpu-deck.js"></script>
+  <script src="dev-card-pool.js"></script>
+  <script src="battle.js"></script>
+  <script src="game.js?v=friend-test-online-battle-1"></script>
+  <script src="online-schema.js?v=friend-test-room-exit-2"></script>
+  <script src="online-battle-core.js?v=friend-test-online-battle-1"></script>
+  <script type="module" src="online.js?v=friend-test-online-battle-1"></script>
+</body>
+</html>
