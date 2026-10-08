@@ -50,6 +50,9 @@
   function conditionText(condition) {
     if (!condition) return "";
     if (typeof condition === "object") {
+      if (condition.kind === "handIs") return `${window.BattleEngine.HAND_LABELS[condition.hand] || condition.hand}を出した場合`;
+      if (condition.kind === "rpsResult") return condition.result === "win" ? "じゃんけん勝利時" : condition.result === "loss" ? "じゃんけん敗北時" : "じゃんけんあいこ時";
+      if (condition.kind === "finalDieParity") return `補正後の最終出目が${condition.parity === "even" ? "偶数" : "奇数"}の場合`;
       if (condition.condition === "rockPaperScissorsWin") {
         const hand = { rock: "グー", paper: "パー", scissors: "チョキ" }[condition.hand];
         return hand ? `${hand}でじゃんけん勝利` : "じゃんけん勝利";
@@ -86,6 +89,9 @@
       case "dieModifier": return item.attributeBonus ? `自分のダイス+${amount}（${window.CARD_ATTRIBUTE_LABELS[item.attribute]}カードが場にいれば+${item.attributeBonus}）` : `自分のダイス+${amount}${when}`;
       case "opponentDieModifier": return `相手のダイス${amount < 0 ? amount : `+${amount}`}${item.conditional ? `（${conditionText(item.conditional.condition).replace("カードが場にいる時", "なら")}${item.conditional.value}）` : when}`;
       case "nextRoundDieModifier": return `次ラウンド自分のダイス+${amount}${when}`;
+      case "rawDieOverride": return `補正前ダイスを${amount}にする`;
+      case "nextRoundRawDieOverride": return `次ラウンドの補正前ダイスを${amount}にする`;
+      case "damageBonusPerRpsLoss": return `このカード自身がじゃんけんに負けるたび、以後の与ダメージ+${amount}`;
       case "nextRoundOpponentDieModifier": return `次ラウンド相手のダイス${amount}`;
       case "nextRoundOpponentDamageReduction": return `次ラウンド相手のダメージ-${amount}`;
       case "nextOpponentDamageReduction": return `相手の次のダメージ-${amount}`;
@@ -283,6 +289,8 @@
       if(revenge) { const attribute=revenge.condition?.attribute; const n=side.graveyard.filter(x=>side.battleCards.find(c=>c.instanceId===x.instanceId)?.card.attribute===attribute).length; const bonus=Math.min(n*revenge.value,revenge.maximum??Infinity); state=`墓地の${window.CARD_ATTRIBUTE_LABELS[attribute]}：${n} → ダメージ+${bonus}`; }
       const fist=passive("damageBonusPerRockUse");
       if(fist) state=`${window.BattleEngine.HAND_LABELS[fist.condition?.hand||"rock"]}使用：${unit.rockUses}回 → ダメージ+${unit.accumulatedDamageBonus}`;
+      const unyielding=passive("damageBonusPerRpsLoss");
+      if(unyielding) state=`このカード自身のじゃんけん敗北：累積ダメージ+${unit.accumulatedDamageBonus}`;
       const reverse=card.passives.find(item=>item.kind==="damageBonus"&&typeof item.condition==="object"&&item.condition.condition==="rockPaperScissorsWin");
       if(reverse) state=`${window.BattleEngine.HAND_LABELS[reverse.condition.hand]}でじゃんけん勝利 → ダメージ+${reverse.value}`;
       const sea=passive("maxHpBonusPerOtherBattleCard");

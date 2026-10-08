@@ -38,7 +38,7 @@
     const side = {
       id, label, cardMap, ownedCards: ownedCards.map(item => ({ ...item })), battleCards,
       supportCards: ownedCards.filter(item => !battleSet.has(item.instanceId)).map(item => ({ ...item })),
-      usedSupportCards: [], supportUsedThisRound: false, activeBattleCardIndex: 0, graveyard: [], revivalUsed: false, pendingRoundEffects: { dieModifier: 0, incomingDamageReduction: 0, outgoingDamageReduction: 0 },
+      usedSupportCards: [], supportUsedThisRound: false, activeBattleCardIndex: 0, graveyard: [], revivalUsed: false, pendingRoundEffects: { dieModifier: 0, incomingDamageReduction: 0, outgoingDamageReduction: 0, rawDieOverride: null },
       currentRoundEffects: null,
       get activeCard() { return this.battleCards[this.activeBattleCardIndex] || null; }
     };
@@ -48,11 +48,12 @@
   function freshRoundEffects(side) {
     const effects = {
       supportDieModifier: 0, statusDieModifier: side.pendingRoundEffects.dieModifier,
+      statusRawDieOverride: side.pendingRoundEffects.rawDieOverride, supportRawDieOverride: null, deferredSupportEffects: [],
       damageBonus: 0, incomingDamageReduction: side.pendingRoundEffects.incomingDamageReduction,
       outgoingDamageReduction: side.pendingRoundEffects.outgoingDamageReduction, suppressRpsDieModifier: false,
       shield: 0, selfDamage: 0, rerollAvailable: false
     };
-    side.pendingRoundEffects = { dieModifier: 0, incomingDamageReduction: 0, outgoingDamageReduction: 0 };
+    side.pendingRoundEffects = { dieModifier: 0, incomingDamageReduction: 0, outgoingDamageReduction: 0, rawDieOverride: null };
     side.supportUsedThisRound = false;
     side.currentRoundEffects = effects;
   }
@@ -128,12 +129,19 @@
       case "nextOpponentDamageReduction": return `相手の次のダメージ-${amount}`;
       case "opponentDamageReduction": return `相手のダメージ-${amount}`;
       case "suppressRpsDieModifier": return "両者のじゃんけん由来ダイス補正を無効化";
+      case "rawDieOverride": return `補正前ダイスを${amount}にする`;
+      case "nextRoundRawDieOverride": return `次ラウンドの補正前ダイスを${amount}にする`;
+      case "damageBonusPerRpsLoss": return `じゃんけん敗北ごとにダメージ+${amount}`;
       default: return effect.kind;
     }
   }
   function applySupportEffect(match, side, effect, sourceName) {
     const own = side.currentRoundEffects;
     const opponent = (side.id === "player" ? match.cpu : match.player).currentRoundEffects;
+    if (effect.condition && typeof effect.condition === "object" && ["handIs", "rpsResult", "finalDieParity"].includes(effect.condition.kind)) {
+      own.deferredSupportEffects.push({ kind:effect.kind, value:effect.value, condition:{...effect.condition}, source:sourceName });
+      return { kind:effect.kind, value:effect.value, source:sourceName, actual:effect.value, target:side.id, deferred:true };
+    }
     const value = effectValue(effect, side);
     const condition = effect.conditional?.condition || effect.condition;
     const conditionApplied = !!condition && conditionMet(condition,side);
@@ -143,6 +151,7 @@
     if(value===null){result.actual=0;result.inactive=true;return result;}
     switch (effect.kind) {
       case "damageBonus": own.damageBonus += value; break;
+      case "rawDieOverride": own.supportRawDieOverride = value; break;
       case "damageReduction": own.incomingDamageReduction += value; break;
       case "heal": {
         const active = side.activeCard;
@@ -199,7 +208,7 @@
       if (effect.kind === "heal") {
         const missing = side.activeCard ? side.activeCard.maxHp - side.activeCard.currentHp : 0;
         if (missing >= Math.max(8, value * 0.6)) score += Math.min(3, missing / 25);
-      } else if (["damageBonus","damageReduction","opponentDieModifier","dieModifier","opponentDamageReduction","nextOpponentDamageReduction","suppressRpsDieModifier"].includes(effect.kind)) score += 1.6;
+      } else if (["damageBonus","damageReduction","opponentDieModifier","dieModifier","rawDieOverride","opponentDamageReduction","nextOpponentDamageReduction","suppressRpsDieModifier"].includes(effect.kind)) score += 1.6;
       else if (effect.kind === "reroll") score += side.activeCard?.card.id === "n-white-clown" ? 0.7 : 1.2;
     }
     return score;
@@ -266,11 +275,21 @@
     if([match.player, match.cpu].some(side => side.activeCard?.card.passives.some(passive => passive.kind === "suppressRpsDieModifier"))) {
       match.player.currentRoundEffects.suppressRpsDieModifier=true; match.cpu.currentRoundEffects.suppressRpsDieModifier=true;
     }
-    const playerRaw = rollD6(rng); const cpuRaw = rollD6(rng);
+    const playerRolled = rollD6(rng); const cpuRolled = rollD6(rng);
+    const playerRaw = match.player.currentRoundEffects.supportRawDieOverride ?? match.player.currentRoundEffects.statusRawDieOverride ?? playerRolled;
+    const cpuRaw = cpu.currentRoundEffects.supportRawDieOverride ?? cpu.currentRoundEffects.statusRawDieOverride ?? cpuRolled;
     const playerData = { initialRaw: playerRaw, rawDie: playerRaw, rerolled: false, rerollAvailable: match.player.currentRoundEffects.rerollAvailable };
     const cpuData = { initialRaw: cpuRaw, rawDie: cpuRaw, rerolled: false, rerollAvailable: cpu.currentRoundEffects.rerollAvailable };
     runHooks(match.hooks,"afterRawDice",{match,playerData,cpuData,stage:"initial"});
     const cpuRps = rpsResult === "win" ? "loss" : rpsResult === "loss" ? "win" : "draw";
+    for (const [side, result] of [[match.player, rpsResult], [match.cpu, cpuRps]]) {
+      if (result !== "loss" || !side.activeCard) continue;
+      const passive = findPassive(side.activeCard.card, "damageBonusPerRpsLoss");
+      if (passive) {
+        side.activeCard.accumulatedDamageBonus += passive.value;
+        match.log.push({round:match.round,type:"ability",lines:[`${side.label}：${side.activeCard.card.name}《${passive.label || "蓄積"}》→ じゃんけん敗北、以後ダメージ+${side.activeCard.accumulatedDamageBonus}`]});
+      }
+    }
     if (autoCpuReroll && shouldCpuReroll(cpu.activeCard.card, cpuRaw, cpuRps, cpu.currentRoundEffects)) {
       cpuData.rawDie = rollD6(rng); cpuData.rerolled = true; cpu.currentRoundEffects.rerollAvailable = false;
       runHooks(match.hooks,"afterRawDice",{match,playerData,cpuData,actor:"cpu",stage:"reroll"});
@@ -388,6 +407,7 @@
         case "shield": output.shield += effect.value; output.log.push(`${side.activeCard.card.name}：最終${finalDie} → シールド${effect.value}`); break;
         case "selfDamage": output.selfDamage += effect.value; output.log.push(`${side.activeCard.card.name}：自分に${effect.value}ダメージ`); break;
         case "nextRoundDieModifier": output.nextEffects.push({ target: side.id, key:"dieModifier", value:effect.value }); output.log.push(`${side.activeCard.card.name}：次ラウンド自分のダイス${effect.value>=0?"+":""}${effect.value}`); break;
+        case "nextRoundRawDieOverride": output.nextEffects.push({ target:side.id, key:"rawDieOverride", value:effect.value }); output.log.push(`${side.activeCard.card.name}：次ラウンドの補正前ダイスを${effect.value}にする`); break;
         case "nextRoundOpponentDieModifier": output.nextEffects.push({ target: side.id === "player" ? "cpu" : "player", key:"dieModifier", value:effect.value }); output.log.push(`${side.activeCard.card.name}：次ラウンド相手のダイス${effect.value}`); break;
         case "nextRoundOpponentDamageReduction": output.nextEffects.push({ target: side.id === "player" ? "cpu" : "player", key:"outgoingDamageReduction", value:effect.value }); output.log.push(`${side.activeCard.card.name}：相手の次ラウンドのダメージ-${effect.value}`); break;
         case "revive": {
@@ -443,6 +463,20 @@
       cpu:{ before:cBefore, healedTo:cHealedTo, incoming:cpuAttackResult.finalDamage, selfDamage:cpuEffects.selfDamage, after:cFinal, knockedOut:cFinal<=0 },
       bothKO, simultaneousRule
     };
+  }
+  function applyDeferredSupportEffects(side, hand, rpsResult, finalDie) {
+    const effects = side.currentRoundEffects.deferredSupportEffects || [];
+    for (const effect of effects) {
+      const condition = effect.condition;
+      const matches = condition.kind === "handIs" ? hand === condition.hand
+        : condition.kind === "rpsResult" ? rpsResult === condition.result
+        : condition.kind === "finalDieParity" ? (finalDie % 2 === 0) === (condition.parity === "even")
+        : false;
+      if (!matches) continue;
+      if (effect.kind === "damageBonus") side.currentRoundEffects.damageBonus += effect.value;
+      else if (effect.kind === "damageReduction") side.currentRoundEffects.incomingDamageReduction += effect.value;
+    }
+    side.currentRoundEffects.deferredSupportEffects = [];
   }
   function recordKO(side, hooks, round) {
     const card = side.activeCard;
@@ -515,6 +549,8 @@
     const pDice=rolledDice(pending.playerData.rawDie,pending.rpsResult,p.currentRoundEffects);
     const cpuResult=pending.rpsResult==="win"?"loss":pending.rpsResult==="loss"?"win":"draw";
     const cDice=rolledDice(pending.cpuData.rawDie,cpuResult,c.currentRoundEffects);
+    applyDeferredSupportEffects(p, pending.playerHand, pending.rpsResult, pDice.finalDie);
+    applyDeferredSupportEffects(c, pending.cpuHand, cpuResult, cDice.finalDie);
     runHooks(match.hooks,"afterFinalDice",{match,pDice,cDice});
     const pAttack=calcAttack(p,pending.playerHand,pending.rpsResult,pDice);
     const cAttack=calcAttack(c,pending.cpuHand,cpuResult,cDice);
@@ -537,7 +573,10 @@
     const switches={player:null,cpu:null};
     if(kos.player) switches.player=moveAfterKO(p);
     if(kos.cpu) switches.cpu=moveAfterKO(c);
-    for(const next of [...pEffects.nextEffects,...cEffects.nextEffects]) match[next.target].pendingRoundEffects[next.key]+=next.value;
+    for(const next of [...pEffects.nextEffects,...cEffects.nextEffects]) {
+      if (next.key === "rawDieOverride") match[next.target].pendingRoundEffects.rawDieOverride = next.value;
+      else match[next.target].pendingRoundEffects[next.key]+=next.value;
+    }
     const entry={round:match.round,playerHand:pending.playerHand,cpuHand:pending.cpuHand,rpsResult:pending.rpsResult,
       playerDice:pDice,cpuDice:cDice,playerAttack:pAttack,cpuAttack:cAttack,playerDamage:cDamage,cpuDamage:pDamage,
       playerRerolled:pending.playerData.rerolled,cpuRerolled:pending.cpuData.rerolled,
