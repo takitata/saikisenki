@@ -34,6 +34,9 @@
 
   // This is the same noisy value heuristic used by the balance simulator.
   function chooseBattleIds(cardIds, cardMap, count = 5, rng = Math.random) {
+    const definitions = cardIds.map(id => ({ id, card: cardMap instanceof Map ? cardMap.get(id) : cardMap[id] }));
+    const exclusive = definitions.filter(item => item.card?.formationRestriction?.exclusive);
+    if (exclusive.length) return [exclusive[0].id];
     const ranked = cardIds.map(id => {
       const card = cardMap instanceof Map ? cardMap.get(id) : cardMap[id];
       if (!card) throw new Error(`Unknown card in CPU roster: ${id}`);

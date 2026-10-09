@@ -114,3 +114,4 @@ body.modal-open{overflow:hidden}
 .online-support-reveal-card small{color:#a9bbc1;line-height:1.45;overflow-wrap:anywhere}
 .online-exit-result{margin-top:14px;min-width:min(100%,260px)}
 @media(max-width:600px){.online-support-reveal{padding:11px;margin:10px auto}.online-support-reveal-grid{gap:7px}.online-support-reveal-card{padding:9px}.online-support-reveal-card b{font-size:12px}.online-support-reveal-card small{font-size:11px}}
+.rarity.legend{color:#c3a6ff;border-color:#ad8fff88;background:#8f69db18}.game-card:has(.rarity.legend){box-shadow:inset 0 0 0 1px #ad8fff22}.awakening-state{color:#d5bbff}.support-revive-target{display:flex;align-items:center;gap:8px;color:#dfc9a2}.support-revive-target select{min-width:180px;min-height:34px;padding:5px 8px;border:1px solid #e7bb7055;background:#172330;color:var(--text)}.support-revive-note{color:#edb77d}

@@ -294,7 +294,7 @@ import {
   }
   function makeBattleController() {
     return {
-      async submitSupport(instanceId) {
+      async submitSupport(instanceId, reviveTargetId = null) {
         if (!currentRoom || !onlineBattleMatch || onlineBattleMatch.status !== "supportSelection") return;
         const round = activeOnlineRound();
         const { myRole: role } = roleContext();
@@ -304,9 +304,12 @@ import {
         actionSubmittingRound = pendingKey;
         const sealed = Boolean(onlineBattleMatch.supportLockNextRound.player);
         const owned = sealed ? null : onlineDeal?.cards.find(item => item.instanceId === instanceId);
-        const choice = { supportId: owned?.instanceId || "", supportDefinitionId: owned?.definitionId || "", nonce: core.randomHex() };
+        const definition = owned ? window.CARD_DATA.find(card => card.id === owned.definitionId) : null;
+        const needsReviveTarget = Boolean(definition?.support.some(effect => effect.kind === "revive") && onlineBattleMatch.player.graveyard.length && !onlineBattleMatch.player.revivalUsed);
+        if (needsReviveTarget && !onlineBattleMatch.player.graveyard.some(item => item.instanceId === reviveTargetId)) throw new Error("蘇生する墓地カードを選んでください。");
+        const choice = { supportId: owned?.instanceId || "", supportDefinitionId: owned?.definitionId || "", reviveTargetId: needsReviveTarget ? reviveTargetId : "", nonce: core.randomHex() };
         try {
-          sessionStorage.setItem(supportDraftKey(currentRoom.roomId, round), JSON.stringify({ supportId: choice.supportId }));
+          sessionStorage.setItem(supportDraftKey(currentRoom.roomId, round), JSON.stringify({ supportId: choice.supportId, reviveTargetId:choice.reviveTargetId }));
           if (!writeSupportSecret(currentRoom.roomId, round, choice)) throw new Error("サポート選択をこのブラウザーに一時保存できませんでした。");
           window.CPUOnlineBattleUI?.setSupportPhaseState(core.supportPhaseState(currentRoomState?.match?.rounds?.[String(round)] || {}, role, sealed, choice.supportId, true));
           setBattleStatus("サポート確定を送信しています…", onlineBattleMatch);
@@ -718,8 +721,18 @@ import {
     if (!button || !onlineDeal || onlineFormation?.ready) return;
     const id = button.dataset.instance;
     if (onlineBattleIds.includes(id)) onlineBattleIds = onlineBattleIds.filter(value => value !== id);
-    else if (onlineBattleIds.length < 5) onlineBattleIds = [...onlineBattleIds, id];
-    else { els.formationError.textContent = "バトルカードは最大5枚まで選べます。"; return; }
+    else {
+      const clickedDefinitionId = onlineDeal.cards.find(item=>item.instanceId===id)?.definitionId;
+      const exclusive = window.CARD_DATA.find(card=>card.id===clickedDefinitionId)?.formationRestriction?.exclusive;
+      const hasExclusive = onlineBattleIds.some(selectedId=>{
+        const definitionId=onlineDeal.cards.find(item=>item.instanceId===selectedId)?.definitionId;
+        return window.CARD_DATA.find(card=>card.id===definitionId)?.formationRestriction?.exclusive;
+      });
+      if (exclusive && onlineBattleIds.length) { els.formationError.textContent = "このカードは単独でバトル編成してください。"; return; }
+      if (hasExclusive) { els.formationError.textContent = "白虎と他のバトルカードは同時に編成できません。"; return; }
+      if (onlineBattleIds.length < 5) onlineBattleIds = [...onlineBattleIds, id];
+      else { els.formationError.textContent = "バトルカードは最大5枚まで選べます。"; return; }
+    }
     get(ref(db, roomPath(currentRoom.roomId))).then(snapshot => { if (snapshot.exists()) renderOnlineFormation(snapshot.val()); }).catch(error => showError(errorText(error)));
   });
   els.cards.addEventListener("keydown", event => {

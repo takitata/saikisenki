@@ -12,6 +12,7 @@
   const selectedOrder = [];
   let activeFilter = "all";
   let selectedSupportId = null;
+  let selectedReviveTargetId = "";
   let toastTimer;
   let match = null;
   let onlineBattleMode = false;
@@ -104,22 +105,35 @@
       case "damageBonusPerRockUse": return `${window.BattleEngine.HAND_LABELS[item.condition?.hand||"rock"]}使用ごとに以後ダメージ+${amount}${item.condition?.cap==null?"（上限なし）":`（最大+${item.condition.cap}）`}`;
       case "formationScaling": return "編成枚数に応じてHP・ダメージ補正が変化";
       case "suppressRpsDieModifier": return "両者のじゃんけん結果によるダイス補正を0にする";
+      case "immuneToDamageOnRpsWin": return "じゃんけん勝利ラウンドは受けるダメージ0";
       case "damageBonusPerOpponentBattleCardRemaining": return `相手の残りバトルカード数：${Object.entries(item.value).sort((a,b)=>Number(b[0])-Number(a[0])).map(([count,value])=>`${count}枚+${value}`).join(" / ")}`;
       default: return item.kind;
     }
   }
   function supportText(card) { return (card.supportOverrides || card.support).map(effectText).join(" / "); }
+  function awakeningText(card) {
+    const awakening = card.awakening;
+    if (!awakening) return "";
+    const condition = awakening.kind === "reviveAfterKnockout" ? "自身が撃破された後、蘇生に成功すると覚醒" :
+      `味方全体の${awakening.kind === "teamPaperWins" ? "パー勝利" : "じゃんけん敗北"}が累計${awakening.threshold}回に到達すると覚醒`;
+    const hpRule = awakening.hpPolicy === "full" ? "覚醒時に全回復" : "覚醒前の被ダメージ量を引き継ぐ";
+    const triggers = (awakening.triggers || []).map(item => `出目${item.die.join("・")}: ${item.effects.map(effectText).join(" / ")}`);
+    const passives = (awakening.passives || []).map(effectText);
+    return `${condition}。最大HP${awakening.maxHp}、ダイス${awakening.dice.join(" / ")}。${hpRule}${[...passives,...triggers].length ? `。覚醒後効果：${[...passives,...triggers].join(" / ")}` : ""}`;
+  }
   function abilityLines(card) {
     const lines = [];
     if (card.triggers.length) lines.push(`<div class="ability"><strong>ダイス効果</strong>${card.triggers.map(t => `出目${t.die.join("・")}: ${t.effects.map(effectText).join(" / ")}`).join("<br>")}</div>`);
     lines.push(`<div class="ability"><strong>サポート</strong>${supportText(card)}</div>`);
-    if (card.rarity === "rare") {
+    if (card.rarity !== "normal") {
       const unique = card.passives.map(item => item.kind === "formationScaling"
         ? `編成枚数別：${Object.entries(item.value).map(([count, values]) => `${count}枚 HP${values.hp} / ダメージ+${values.damageBonus}`).join(" · ")}`
         : effectText(item));
       unique.push(...card.unresolved.map(x => x.note));
       if (unique.length) lines.push(`<div class="ability unique"><strong>固有能力</strong>${unique.join(" / ")}</div>`);
     }
+    if (card.awakening) lines.push(`<div class="ability unique"><strong>覚醒</strong>${awakeningText(card)}</div>`);
+    if (card.formationRestriction?.exclusive) lines.push(`<div class="ability unique"><strong>編成制限</strong>バトルカード${card.formationRestriction.battleCardCount}体のみ</div>`);
     if (card.description) lines.push(`<div class="ability"><strong>補足</strong>${card.description}</div>`);
     return lines.join("");
   }
@@ -179,8 +193,15 @@
   function toggleSelection(instanceId) {
     const index = selectedOrder.indexOf(instanceId);
     if (index >= 0) selectedOrder.splice(index, 1);
-    else if (selectedOrder.length >= MAX_BATTLE_CARDS) { notify("バトルカードは最大5枚までです"); return; }
-    else selectedOrder.push(instanceId);
+    else {
+      const selectedCard = byId.get(playerOwned.find(item=>item.instanceId===instanceId)?.cardId);
+      const exclusive = selectedCard?.formationRestriction?.exclusive;
+      const currentExclusive = selectedOrder.some(id=>byId.get(playerOwned.find(item=>item.instanceId===id)?.cardId)?.formationRestriction?.exclusive);
+      if (exclusive && selectedOrder.length) { notify("このカードは単独でバトル編成してください"); return; }
+      if (currentExclusive) { notify("白虎と他のバトルカードは同時に編成できません"); return; }
+      if (selectedOrder.length >= MAX_BATTLE_CARDS) { notify("バトルカードは最大5枚までです"); return; }
+      selectedOrder.push(instanceId);
+    }
     renderGrid(); updateCounts();
   }
   function teamRow(owned, order, battle) {
@@ -281,7 +302,7 @@
     renderPoolGrid();
   }
   function cardSpecialNote(card, side) {
-    if (card.rarity === "rare") {
+    if (card.rarity !== "normal") {
       const unit=side.activeCard;
       let state="";
       const passive=kind=>card.passives.find(item=>item.kind===kind);
@@ -310,6 +331,8 @@
       const hunter=passive("damageBonusPerOpponentBattleCardRemaining");
       if(hunter) { const n=engine.livingCards(side.id==="player"?match.cpu:match.player).length; state=`相手残り${n}枚 → ダメージ+${hunter.value[n]||0}`; }
       if(passive("suppressRpsDieModifier")) state="アクティブ中：両者のじゃんけんダイス補正0";
+      if(card.awakening) state=unit.awakened?"覚醒済み：覚醒後の能力が有効":`${card.awakening.threshold ? `覚醒条件まで ${card.awakening.kind==="teamPaperWins"?match.battleState.counters[side.id].paperWins:match.battleState.counters[side.id].rpsLosses}/${card.awakening.threshold}` : "蘇生成功で覚醒"}`;
+      if(card.formationRestriction?.exclusive) state="バトル編成は白虎1体のみ";
       return `<div class="special-note">${state||"固有能力は有効"}</div>`;
     }
     if (card.triggers.length) return `<div class="special-note">特殊ダイス効果は適用。表示外の固有効果は未実装</div>`;
@@ -318,13 +341,14 @@
   function cardPanel(side, owner) {
     const active = side.activeCard;
     const card = active?.card;
+    const activeDice=active?.awakened&&card?.awakening?.dice?card.awakening.dice:card?.dice||[];
     const hpPct = active ? Math.max(0, Math.min(100, active.currentHp / active.maxHp * 100)) : 0;
     const remaining = engine.livingCards(side).filter(unit => unit !== active);
     const koCards = engine.getReviveCandidates(match, side.id);
     const currentPanel = card ? `<article class="combatant-card inspect-active" role="button" tabindex="0" data-inspect-instance="${active.instanceId}" style="--attribute:var(--${card.attribute})" aria-label="${card.name}の詳細を表示">
       <div class="combatant-top"><span class="rarity ${card.rarity}">${window.CARD_RARITY_LABELS[card.rarity]}</span><span class="attribute-label">${window.CARD_ATTRIBUTE_LABELS[card.attribute]}</span><span class="active-chip">ACTIVE</span></div>
       <h3>${card.name}</h3><div class="hp-numbers"><span>HP</span><b>${active.currentHp}</b><i>/</i><span>${active.maxHp}</span></div><div class="hp-track"><span style="width:${hpPct}%"></span></div>
-      <div class="battle-dice-label">タップしてカード詳細</div><div class="battle-dice">${card.dice.map((v,i)=>`<span><small>${i+1}</small><b>${v}</b></span>`).join("")}</div>${cardSpecialNote(card,side)}</article>`
+      <div class="battle-dice-label">タップしてカード詳細</div><div class="battle-dice">${activeDice.map((v,i)=>`<span><small>${i+1}</small><b>${v}</b></span>`).join("")}</div>${active.awakened?`<div class="special-note awakening-state">覚醒済み</div>`:""}${cardSpecialNote(card,side)}</article>`
       : `<div class="combatant-card empty"><div class="empty-symbol">×</div><h3>全カードKO</h3><p>このチームのバトルカードは残っていません。</p></div>`;
     const inspectRows = (items, kind) => items.length ? items.map(item => {
       const definition = byId.get(item.cardId || item.card?.id);
@@ -352,8 +376,11 @@
   function cardDetailHtml(card, unit = null) {
     const hand = window.BattleEngine.ATTRIBUTE_HAND[card.attribute];
     const specialty = card.attribute === "white" ? "すべての手" : window.BattleEngine.HAND_LABELS[hand];
-    const triggers = card.triggers.length ? card.triggers.map(trigger => `<li><b>出目 ${trigger.die.join("・")}</b><span>${trigger.effects.map(effectText).join(" / ")}</span></li>`).join("") : `<li class="detail-empty">なし</li>`;
-    const passives = card.passives.length ? card.passives.map(passive => {
+    const currentTriggers = [...card.triggers, ...(unit?.awakened ? card.awakening?.triggers || [] : [])];
+    const currentPassives = [...card.passives, ...(unit?.awakened ? card.awakening?.passives || [] : [])];
+    const currentDice = unit?.awakened && card.awakening?.dice ? card.awakening.dice : card.dice;
+    const triggers = currentTriggers.length ? currentTriggers.map(trigger => `<li><b>出目 ${trigger.die.join("・")}</b><span>${trigger.effects.map(effectText).join(" / ")}</span></li>`).join("") : `<li class="detail-empty">なし</li>`;
+    const passives = currentPassives.length ? currentPassives.map(passive => {
       const text=passive.kind==="formationScaling"
         ? `編成枚数別：${Object.entries(passive.value).map(([count,values])=>`${count}枚 HP${values.hp} / ダメージ+${values.damageBonus}`).join(" · ")}`
         : effectText(passive);
@@ -363,10 +390,11 @@
     return `<article class="card-detail attr-${card.attribute}">
       <div class="card-art-slot" aria-label="カード画像エリア"><span>骰戦記</span><small>カード画像エリア</small></div>
       <div class="card-detail-heading"><span class="rarity ${card.rarity}">${window.CARD_RARITY_LABELS[card.rarity]}</span><span class="detail-attribute">${window.CARD_ATTRIBUTE_LABELS[card.attribute]}属性</span><h2 id="cardInfoTitle">${card.name}</h2></div>
-      <div class="detail-summary"><span>HP <b>${unit ? `${unit.currentHp} / ${unit.maxHp}` : card.baseHp}</b></span><span>得意な手 <b>${specialty}</b></span></div>
-      <section class="detail-section"><h3>ダイス 1〜6 の効果</h3><div class="detail-dice">${card.dice.map((value,index)=>`<div><small>${index+1}</small><b>${value}</b></div>`).join("")}</div>${triggers === `<li class="detail-empty">なし</li>` ? "" : `<ul class="detail-list">${triggers}</ul>`}</section>
+      <div class="detail-summary"><span>HP <b>${unit ? `${unit.currentHp} / ${unit.maxHp}` : card.baseHp}</b></span><span>得意な手 <b>${specialty}</b></span>${unit?.awakened?`<span class="awakening-state">覚醒済み</span>`:""}</div>
+      <section class="detail-section"><h3>ダイス 1〜6 の効果</h3><div class="detail-dice">${currentDice.map((value,index)=>`<div><small>${index+1}</small><b>${value}</b></div>`).join("")}</div>${triggers === `<li class="detail-empty">なし</li>` ? "" : `<ul class="detail-list">${triggers}</ul>`}</section>
       <section class="detail-section"><h3>固有能力</h3><ul class="detail-list">${passives}${notes}</ul></section>
       <section class="detail-section"><h3>サポート能力</h3><ul class="detail-list">${(card.supportOverrides || card.support).length ? (card.supportOverrides || card.support).map(item=>`<li>${effectText(item)}</li>`).join("") : `<li class="detail-empty">なし</li>`}</ul></section>
+      ${card.awakening ? `<section class="detail-section"><h3>覚醒</h3><p>${awakeningText(card)}</p></section>` : ""}${card.formationRestriction?.exclusive ? `<section class="detail-section"><h3>編成制限</h3><p>バトルカード${card.formationRestriction.battleCardCount}体のみ</p></section>` : ""}
       ${card.description ? `<p class="detail-description">${card.description}</p>` : ""}
     </article>`;
   }
@@ -423,7 +451,8 @@
     if (!onlineBattleMode || !onlinePublicSupports) { target.hidden = true; target.innerHTML = ""; return; }
     const renderChoice = (label, choice, sealed) => {
       const card = choice?.supportDefinitionId ? byId.get(choice.supportDefinitionId) : null;
-      return `<article class="online-support-reveal-card"><span class="panel-kicker">${label}</span><b>${card ? card.name : sealed ? "サポートなし（封印）" : "サポートなし"}</b><small>${card ? supportText(card) : sealed ? "封印術師の効果により、このラウンドはサポートを使用できません。" : "このラウンドはサポートを使用しません。"}</small></article>`;
+      const revived=choice?.reviveTargetId?match[label==="あなた"?"player":"cpu"].battleCards.find(unit=>unit.instanceId===choice.reviveTargetId)?.card.name:"";
+      return `<article class="online-support-reveal-card"><span class="panel-kicker">${label}</span><b>${card ? card.name : sealed ? "サポートなし（封印）" : "サポートなし"}</b><small>${card ? `${supportText(card)}${revived?` · 蘇生対象：${revived}`:""}` : sealed ? "封印術師の効果により、このラウンドはサポートを使用できません。" : "このラウンドはサポートを使用しません。"}</small></article>`;
     };
     target.hidden = false;
     target.innerHTML = `<div class="online-support-reveal-heading"><span class="panel-kicker">SUPPORT REVEALED</span><strong>両者のサポートが公開されました</strong></div><div class="online-support-reveal-grid">${renderChoice("あなた", onlinePublicSupports.own, onlinePublicSupports.ownSealed)}${renderChoice("相手", onlinePublicSupports.opponent, onlinePublicSupports.opponentSealed)}</div>`;
@@ -448,9 +477,14 @@
     $("#supportChoiceList").innerHTML=html||`<p class="log-empty">使用できるサポートカードがありません。</p>`;
     const selected=cards.find(item=>item.instanceId===selectedSupportId);
     const card=selected?byId.get(selected.cardId):null;
+    const reviveEffect=card?.support.find(item=>item.kind==="revive");
+    const reviveCandidates=match.player.graveyard.map(item=>match.player.battleCards.find(unit=>unit.instanceId===item.instanceId)).filter(Boolean);
+    const reviveTargetRequired=Boolean(reviveEffect && reviveCandidates.length && !match.player.revivalUsed);
+    if (!reviveCandidates.some(unit=>unit.instanceId===selectedReviveTargetId)) selectedReviveTargetId="";
+    const reviveTargetControl=reviveTargetRequired?`<label class="support-revive-target">蘇生するカード<select id="supportReviveTarget"><option value="">選択してください</option>${reviveCandidates.map(unit=>`<option value="${unit.instanceId}" ${selectedReviveTargetId===unit.instanceId?"selected":""}>${unit.card.name}（HP${unit.maxHp}）</option>`).join("")}</select></label>`:reviveEffect?`<small class="support-revive-note">${match.player.revivalUsed?"この試合の蘇生権は使用済みです。":"墓地に蘇生できるカードがありません。"}</small>`:"";
     const waitText=onlineSupportPhaseState.supportRevealed?"両者のサポートが公開されました。":onlineSupportPhaseState.waitingForOpponentSupport?"相手のサポート選択を待っています。":"";
-    $("#supportPreview").innerHTML=(card?`<strong>${card.name}の効果</strong><span>${supportText(card)}</span>${supportWarning(card)}`:"サポートを選ぶと効果が表示されます。")+(gameSealed?`<span class="support-warning">封印術師の能力により、このラウンドはサポートを使用できません。</span>`:supportCommitted?`<span class="support-warning">サポート確定済み${waitText?` · ${waitText}`:""}</span>`:commitPending?`<span class="support-warning">サポート確定を送信しています…</span>`:"");
-    $("#useSupportButton").disabled=!card||locked;
+    $("#supportPreview").innerHTML=(card?`<strong>${card.name}の効果</strong><span>${supportText(card)}</span>${supportWarning(card)}${reviveTargetControl}`:"サポートを選ぶと効果が表示されます。")+(gameSealed?`<span class="support-warning">封印術師の能力により、このラウンドはサポートを使用できません。</span>`:supportCommitted?`<span class="support-warning">サポート確定済み${waitText?` · ${waitText}`:""}</span>`:commitPending?`<span class="support-warning">サポート確定を送信しています…</span>`:"");
+    $("#useSupportButton").disabled=!card||locked||(reviveTargetRequired&&!selectedReviveTargetId);
     $("#skipSupportButton").disabled=supportCommitted||commitPending;
     $("#skipSupportButton").textContent=gameSealed?"封印中：サポートなしを確定":supportCommitted?"サポート確定済み":commitPending?"確定中…":"サポートを使わない";
   }
@@ -510,11 +544,11 @@
     const displayLogLine = line => onlineBattleMode ? line.replaceAll("プレイヤー", "あなた").replaceAll("CPU", "相手") : line;
     $("#battleLog").innerHTML = match.log.slice().reverse().map(entry => `<article class="log-entry"><header><b>ROUND ${entry.round}</b><span>${entry.type==="roundResult"?resultLabel(entry.entry.rpsResult):entry.type==="support"?"サポート":entry.type==="reroll"?"振り直し":entry.type==="dice"?"じゃんけん・ダイス":"ラウンド開始"}</span></header><div>${engine.formatLog(entry).map(line => `<p>${displayLogLine(line)}</p>`).join("")}</div></article>`).join("") || `<p class="log-empty">ラウンド結果はここに表示されます。</p>`;
   }
-  function confirmSupport(instanceId) {
+  function confirmSupport(instanceId, reviveTargetId = selectedReviveTargetId) {
     if(!match||match.status!=="supportSelection")return;
-    if(onlineBattleMode) { Promise.resolve(onlineBattleController?.submitSupport(instanceId)).catch(error=>notify(error.message||"オンライン操作に失敗しました")); return; }
-    engine.finishSupportPhase(match,instanceId,{rng:Math.random});
-    selectedSupportId=null; renderBattle(); $("#battleLog").scrollTop=0;
+    if(onlineBattleMode) { Promise.resolve(onlineBattleController?.submitSupport(instanceId,reviveTargetId)).catch(error=>notify(error.message||"オンライン操作に失敗しました")); return; }
+    engine.finishSupportPhase(match,instanceId,{rng:Math.random,playerReviveTargetId:reviveTargetId});
+    selectedSupportId=null; selectedReviveTargetId=""; renderBattle(); $("#battleLog").scrollTop=0;
   }
   function playHand(hand) {
     if(!match||match.status!=="handChoice")return;
@@ -533,6 +567,7 @@
   function chooseRevive(instanceId) { if(!match||match.status!=="reviveChoice")return; if(onlineBattleMode){Promise.resolve(onlineBattleController?.submitRevive(instanceId)).catch(error=>notify(error.message||"オンライン操作に失敗しました"));return;} engine.completeReviveChoice(match,instanceId); renderBattle(); $("#battleLog").scrollTop=0; }
   function nextRound() {
     selectedSupportId=null;
+    selectedReviveTargetId="";
     if(onlineBattleMode){Promise.resolve(onlineBattleController?.nextRound()).catch(error=>notify(error.message||"オンライン操作に失敗しました"));return;}
     if (engine.advanceRound(match)) renderBattle();
   }
@@ -557,7 +592,7 @@
   };
   window.CPUOnlineBattleUI = {
     start(onlineMatch, controller, status = "", supportState = null) {
-      match = onlineMatch; onlineBattleMode = true; onlineBattleController = controller; onlineBattleStatus = status; selectedSupportId = null; onlineSupportPhaseState = supportState || { supportSelected:false, supportCommitted:false, waitingForOpponentSupport:false, supportRevealed:false, supportSealedByEffect:false, supportCommitPending:false }; onlinePublicSupports = null;
+      match = onlineMatch; onlineBattleMode = true; onlineBattleController = controller; onlineBattleStatus = status; selectedSupportId = null; selectedReviveTargetId = ""; onlineSupportPhaseState = supportState || { supportSelected:false, supportCommitted:false, waitingForOpponentSupport:false, supportRevealed:false, supportSealedByEffect:false, supportCommitPending:false }; onlinePublicSupports = null;
       $("#startView").hidden = true; $("#onlineView").hidden = true; $("#buildView").hidden = true; $("#completeView").hidden = true; $("#battleView").hidden = false;
       setPhase("PHASE 03", "オンラインバトル"); renderBattle(); window.scrollTo({top:0,behavior:"smooth"});
     },
@@ -600,8 +635,9 @@
     const detail=event.target.closest(".support-detail");
     if(detail){openCardDetail(detail.dataset.inspectInstance);return;}
     const button=event.target.closest(".support-select");
-    if(button&&!button.disabled){selectedSupportId=button.dataset.supportInstance;if(onlineBattleMode)onlineSupportPhaseState={...onlineSupportPhaseState,supportSelected:true};renderSupportControls();}
+    if(button&&!button.disabled){selectedSupportId=button.dataset.supportInstance;selectedReviveTargetId="";if(onlineBattleMode)onlineSupportPhaseState={...onlineSupportPhaseState,supportSelected:true};renderSupportControls();}
   });
+  $("#supportPreview").addEventListener("change",event=>{if(event.target.id==="supportReviveTarget"){selectedReviveTargetId=event.target.value;renderSupportControls();}});
   for(const panel of [$("#playerBattlePanel"),$("#cpuBattlePanel")]) panel.addEventListener("click",event=>{
     const list=event.target.closest("[data-inspect-list]");
     const card=event.target.closest("[data-inspect-instance]");

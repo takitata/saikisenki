@@ -16,7 +16,7 @@
   function rollD6(rng = Math.random) { return Math.floor(rng() * 6) + 1; }
   function getRpsDieModifier(result) { return result === "win" ? 1 : result === "loss" ? -2 : 0; }
   function clampFinalDie(value) { return clamp(value, 1, 6); }
-  function getBasicDamage(card, finalDie) { return card.dice[finalDie - 1]; }
+  function getBasicDamage(card, finalDie, unit = null) { return (unit?.awakened && card.awakening?.dice ? card.awakening.dice : card.dice)[finalDie - 1]; }
   function getExpertHandBonus(card, hand, rpsResult) {
     if (rpsResult !== "win") return 0;
     if (card.attribute === "white") return 10;
@@ -32,9 +32,11 @@
       if (!owned) throw new Error(`Unknown card instance: ${instanceId}`);
       const card = cardMap.get(owned.cardId);
       if (!card) throw new Error(`Unknown card definition: ${owned.cardId}`);
-      return { instanceId: owned.instanceId, cardId: owned.cardId, card, slotIndex, maxHp: card.baseHp, currentHp: card.baseHp, knockedOut: false, hasEnteredBattle: false, accumulatedDamageBonus: 0, oncePerBattleUsed: false, rockUses: 0, battleStartDamageBonus: 0, battleStartHpBonus: 0 };
+      return { instanceId: owned.instanceId, cardId: owned.cardId, card, slotIndex, maxHp: card.baseHp, currentHp: card.baseHp, knockedOut: false, hasEnteredBattle: false, accumulatedDamageBonus: 0, oncePerBattleUsed: false, rockUses: 0, battleStartDamageBonus: 0, battleStartHpBonus: 0, awakened: false };
     });
     if (battleCards.length < 1 || battleCards.length > MAX_BATTLE_CARDS) throw new Error("Battle team must contain 1 to 5 cards");
+    const exclusive = battleCards.filter(unit => unit.card.formationRestriction?.exclusive);
+    if (exclusive.length && (exclusive.length !== 1 || battleCards.length !== 1)) throw new Error("This card must be the only battle card in the roster");
     const side = {
       id, label, cardMap, ownedCards: ownedCards.map(item => ({ ...item })), battleCards,
       supportCards: ownedCards.filter(item => !battleSet.has(item.instanceId)).map(item => ({ ...item })),
@@ -75,13 +77,36 @@
     }
     match.battleState.counters[side.id].startingBattleCardCount = count;
   }
+  function awakenUnit(match, unit) {
+    if (unit.awakened || !unit.card.awakening) return false;
+    const awakening = unit.card.awakening;
+    const damageTaken = Math.max(0, unit.maxHp - unit.currentHp);
+    unit.awakened = true;
+    unit.maxHp = awakening.maxHp;
+    if (unit.knockedOut || unit.currentHp <= 0) unit.currentHp = 0;
+    else unit.currentHp = awakening.hpPolicy === "full" ? unit.maxHp : Math.max(0, unit.maxHp - damageTaken);
+    if (match?.log) match.log.push({ round:match.round, type:"ability", lines:[`${unit.card.name} → 覚醒${awakening.label ? `《${awakening.label}》` : ""}、HP${unit.currentHp}/${unit.maxHp}`] });
+    return true;
+  }
+  function awakenTeamThresholds(match, side, entry) {
+    const counters = match.battleState.counters[side.id];
+    const hand = side.id === "player" ? entry.playerHand : entry.cpuHand;
+    const result = side.id === "player" ? entry.rpsResult : entry.rpsResult === "win" ? "loss" : entry.rpsResult === "loss" ? "win" : "draw";
+    if (result === "win" && hand === "paper") counters.paperWins++;
+    if (result === "loss") counters.rpsLosses++;
+    for (const unit of side.battleCards) {
+      const condition = unit.card.awakening;
+      if (!condition || unit.awakened || condition.kind === "reviveAfterKnockout") continue;
+      if ((condition.kind === "teamPaperWins" && counters.paperWins >= condition.threshold) || (condition.kind === "teamRpsLosses" && counters.rpsLosses >= condition.threshold)) awakenUnit(match, unit);
+    }
+  }
   function createMatch({ playerOwned, playerOrder, cpuOwned, cpuOrder, cardMap, hooks = createHookSet() }) {
     const match = {
       player: createSide({ id: "player", label: "プレイヤー", ownedCards: playerOwned, battleOrder: playerOrder, cardMap }),
       cpu: createSide({ id: "cpu", label: "CPU", ownedCards: cpuOwned, battleOrder: cpuOrder, cardMap }),
       round: 1, outcome: null, status: "supportSelection", log: [], hooks, cardMap,
       pendingRound: null, pendingRevive: null, supportLockNextRound: { player:false, cpu:false },
-      battleState: { counters: { player:{}, cpu:{} } },
+      battleState: { counters: { player:{paperWins:0,rpsLosses:0}, cpu:{paperWins:0,rpsLosses:0} } },
       history: {
         player: { handWins:{rock:0,scissors:0,paper:0}, handLosses:{rock:0,scissors:0,paper:0}, rpsWins:0, rpsLosses:0, cardKOs:0, supportUses:0 },
         cpu: { handWins:{rock:0,scissors:0,paper:0}, handLosses:{rock:0,scissors:0,paper:0}, rpsWins:0, rpsLosses:0, cardKOs:0, supportUses:0 }
@@ -131,11 +156,13 @@
       case "suppressRpsDieModifier": return "両者のじゃんけん由来ダイス補正を無効化";
       case "rawDieOverride": return `補正前ダイスを${amount}にする`;
       case "nextRoundRawDieOverride": return `次ラウンドの補正前ダイスを${amount}にする`;
+      case "revive": return `墓地のカード1体をHP${effect.condition?.hpPercent ?? amount}%で蘇生`;
+      case "immuneToDamageOnRpsWin": return "じゃんけん勝利時、受けるダメージを0にする";
       case "damageBonusPerRpsLoss": return `じゃんけん敗北ごとにダメージ+${amount}`;
       default: return effect.kind;
     }
   }
-  function applySupportEffect(match, side, effect, sourceName) {
+  function applySupportEffect(match, side, effect, sourceName, reviveTargetId = null) {
     const own = side.currentRoundEffects;
     const opponent = (side.id === "player" ? match.cpu : match.player).currentRoundEffects;
     if (effect.condition && typeof effect.condition === "object" && ["handIs", "rpsResult", "finalDieParity"].includes(effect.condition.kind)) {
@@ -167,11 +194,19 @@
       case "nextOpponentDamageReduction": opponent.outgoingDamageReduction += value; result.target = side.id === "player" ? "cpu" : "player"; break;
       case "reroll": own.rerollAvailable = true; break;
       case "suppressRpsDieModifier": own.suppressRpsDieModifier = true; opponent.suppressRpsDieModifier = true; break;
+      case "revive": {
+        const candidates = side.graveyard.map(item => item.instanceId);
+        const targetId = reviveTargetId || candidates.map(id => side.battleCards.find(unit => unit.instanceId === id)).filter(Boolean).sort((a,b) => b.maxHp-a.maxHp || a.slotIndex-b.slotIndex)[0]?.instanceId;
+        if (side.revivalUsed || !targetId || !candidates.includes(targetId)) { result.actual = 0; result.inactive = true; result.reason = side.revivalUsed ? "revival-used" : "no-candidate"; break; }
+        result.revived = reviveCard(side, targetId, effect.condition?.hpPercent ?? value, match);
+        result.actual = result.revived ? 1 : 0;
+        break;
+      }
       default: result.ignored = true;
     }
     return result;
   }
-  function applySupport(match, sideId, instanceId) {
+  function applySupport(match, sideId, instanceId, options = {}) {
     if (match.status !== "supportSelection") throw new Error("Support selection is closed");
     if (match.supportLockNextRound[sideId]) throw new Error("Support cards are sealed for this round");
     const side = match[sideId];
@@ -185,13 +220,15 @@
     side.supportUsedThisRound = true;
     side.usedSupportCards.push({ ...card, usedRound: match.round });
     match.history[sideId].supportUses++;
-    const effects = definition.support.map(effect => applySupportEffect(match, side, effect, definition.name));
+    const effects = definition.support.map(effect => applySupportEffect(match, side, effect, definition.name, options.reviveTargetId));
     const event = { type: "support", side: sideId, card: definition.name, instanceId, effects };
     match.log.push({ round: match.round, type: "support", event, lines: supportLog(event) });
     return event;
   }
   function supportLog(event) {
     return event.effects.map(item => {
+      if(item.kind === "revive" && item.revived) return `${event.side === "cpu" ? "CPU" : "プレイヤー"}：${event.card}サポート使用 → ${item.revived.name}をHP${item.revived.hp}/${item.revived.maxHp}で蘇生`;
+      if(item.kind === "revive" && item.inactive) return `${event.side === "cpu" ? "CPU" : "プレイヤー"}：${event.card}サポート使用 → 蘇生なし${item.reason === "revival-used" ? "（蘇生権使用済み）" : "（墓地に対象なし）"}`;
       if(item.inactive) return `${event.side === "cpu" ? "CPU" : "プレイヤー"}：${event.card}サポート使用 → 条件を満たさず効果なし`;
       const reason=item.conditionNote?`（${item.conditionNote}）`:"";
       if (item.kind === "heal") return item.actual ? `${event.side === "cpu" ? "CPU" : "プレイヤー"}：${event.card}サポート使用 → ${item.actual}回復（HP${item.afterHp}）${reason}` : `${event.side === "cpu" ? "CPU" : "プレイヤー"}：${event.card}サポート使用 → HP満タンのため回復なし`;
@@ -210,36 +247,37 @@
         if (missing >= Math.max(8, value * 0.6)) score += Math.min(3, missing / 25);
       } else if (["damageBonus","damageReduction","opponentDieModifier","dieModifier","rawDieOverride","opponentDamageReduction","nextOpponentDamageReduction","suppressRpsDieModifier"].includes(effect.kind)) score += 1.6;
       else if (effect.kind === "reroll") score += side.activeCard?.card.id === "n-white-clown" ? 0.7 : 1.2;
+      else if (effect.kind === "revive" && !side.revivalUsed && side.graveyard.length) score += 2.4;
     }
     return score;
   }
-  function chooseCpuSupport(match, rng = Math.random, overrideInstanceId = null) {
+  function chooseCpuSupport(match, rng = Math.random, overrideInstanceId = null, options = {}) {
     const cpu = match.cpu;
     const candidates = cpu.supportCards.map(owned => ({ owned, definition: match.cardMap.get(owned.cardId) }))
       .filter(item => item.definition)
       .map(item => ({ ...item, score: supportScore(item.definition, cpu) }))
       .filter(item => item.score > 0);
-    if (overrideInstanceId) return applySupport(match, "cpu", overrideInstanceId);
+    if (overrideInstanceId) return applySupport(match, "cpu", overrideInstanceId, options);
     if (!candidates.length || rng() > 0.68) return null;
     candidates.sort((a,b) => b.score - a.score);
     const top = candidates.filter(item => item.score === candidates[0].score);
     const picked = top[Math.floor(rng() * top.length)];
-    return applySupport(match, "cpu", picked.owned.instanceId);
+    return applySupport(match, "cpu", picked.owned.instanceId, options);
   }
-  function finishSupportPhase(match, playerSupportId = null, { rng = Math.random, cpuSupportId = null, skipCpuSupport = false } = {}) {
+  function finishSupportPhase(match, playerSupportId = null, { rng = Math.random, cpuSupportId = null, skipCpuSupport = false, playerReviveTargetId = null, cpuReviveTargetId = null } = {}) {
     if (match.status !== "supportSelection") throw new Error("Not in support phase");
     if (match.supportLockNextRound.player) match.log.push({round:match.round,type:"support",lines:["封印術師《封印》→ プレイヤーはこのラウンドのサポート使用不可"]});
-    else if (playerSupportId) applySupport(match, "player", playerSupportId);
+    else if (playerSupportId) applySupport(match, "player", playerSupportId, { reviveTargetId:playerReviveTargetId });
     if (match.supportLockNextRound.cpu) match.log.push({round:match.round,type:"support",lines:["封印術師《封印》→ CPUはこのラウンドのサポート使用不可"]});
-    else if (!skipCpuSupport) chooseCpuSupport(match, rng, cpuSupportId);
+    else if (!skipCpuSupport) chooseCpuSupport(match, rng, cpuSupportId, { reviveTargetId:cpuReviveTargetId });
     match.supportLockNextRound.player=false; match.supportLockNextRound.cpu=false;
     match.status = "handChoice";
   }
-  function finishPairedSupportPhase(match, playerSupportId = null, cpuSupportId = null) {
+  function finishPairedSupportPhase(match, playerSupportId = null, cpuSupportId = null, options = {}) {
     if (match.status !== "supportSelection") throw new Error("Not in support phase");
     for (const [sideId, supportId] of [["player", playerSupportId], ["cpu", cpuSupportId]]) {
       if (match.supportLockNextRound[sideId]) match.log.push({ round: match.round, type: "support", lines: [`${sideId === "player" ? "プレイヤー" : "CPU"}：封印中のためサポートを使わない`] });
-      else if (supportId) applySupport(match, sideId, supportId);
+      else if (supportId) applySupport(match, sideId, supportId, { reviveTargetId:sideId === "player" ? options.playerReviveTargetId : options.cpuReviveTargetId });
     }
     match.supportLockNextRound.player = false;
     match.supportLockNextRound.cpu = false;
@@ -351,12 +389,15 @@
   }
   function collectCardEffects(match, side, attack, hand, rpsResult) {
     const finalDie=attack.dice.finalDie;
-    const triggered = getTriggerEffects(side.activeCard.card, finalDie);
-    const output = { healing:0, healSources:[], shield:0, selfDamage:0, nextEffects:[], reviveCandidates:[], reviveHpPercent:50, reviveSourceUnit:null, log:[] };
+    const triggered = [...getTriggerEffects(side.activeCard.card, finalDie), ...(side.activeCard.awakened ? getTriggerEffects({triggers:side.activeCard.card.awakening?.triggers || []}, finalDie) : [])];
+    const output = { healing:0, healSources:[], shield:0, selfDamage:0, incomingDamageReduction:0, nextEffects:[], reviveCandidates:[], reviveHpPercent:50, reviveSourceUnit:null, log:[] };
     const unit=side.activeCard, name=unit.card.name;
     for (const passive of unit.card.passives) {
       const label = passive.label ? `《${passive.label}》` : "";
       switch (passive.kind) {
+        case "damageReduction":
+          if (unit.awakened) output.incomingDamageReduction += passive.value;
+          break;
         case "damageBonus":
           if (passiveConditionMet(passive, side, hand, rpsResult)) {
             attack.passiveBonus += passive.value; attack.rawDamage += passive.value;
@@ -401,10 +442,12 @@
           break;
       }
     }
+    if (unit.awakened) for (const passive of unit.card.awakening?.passives || []) if (passive.kind === "damageReduction") output.incomingDamageReduction += passive.value;
     for (const effect of triggered) {
       switch (effect.kind) {
         case "heal": output.healing += effect.value; output.healSources.push({name,amount:effect.value,label:""}); break;
         case "shield": output.shield += effect.value; output.log.push(`${side.activeCard.card.name}：最終${finalDie} → シールド${effect.value}`); break;
+        case "damageReduction": output.incomingDamageReduction += effect.value; output.log.push(`${side.activeCard.card.name}：最終${finalDie} → 受けるダメージ-${effect.value}`); break;
         case "selfDamage": output.selfDamage += effect.value; output.log.push(`${side.activeCard.card.name}：自分に${effect.value}ダメージ`); break;
         case "nextRoundDieModifier": output.nextEffects.push({ target: side.id, key:"dieModifier", value:effect.value }); output.log.push(`${side.activeCard.card.name}：次ラウンド自分のダイス${effect.value>=0?"+":""}${effect.value}`); break;
         case "nextRoundRawDieOverride": output.nextEffects.push({ target:side.id, key:"rawDieOverride", value:effect.value }); output.log.push(`${side.activeCard.card.name}：次ラウンドの補正前ダイスを${effect.value}にする`); break;
@@ -422,20 +465,22 @@
   }
   function calcAttack(side, hand, rpsResult, dice) {
     const card = side.activeCard.card;
-    const baseDamage = getBasicDamage(card, dice.finalDie);
+    const unit=side.activeCard;
+    side.currentRoundEffects.rpsResult = rpsResult;
+    const baseDamage = getBasicDamage(card, dice.finalDie, unit);
     const expertBonus = getExpertHandBonus(card, hand, rpsResult);
     const supportDamage = side.currentRoundEffects.damageBonus;
-    const unit=side.activeCard;
     const passiveBonus=unit.accumulatedDamageBonus+unit.battleStartDamageBonus;
     const rawDamage = baseDamage + expertBonus + supportDamage + passiveBonus;
     return { card, hand, dice, baseDamage, expertBonus, supportDamage, passiveBonus, rawDamage };
   }
   function resolveDamage(attackerAttack, attacker, defender, defenderEffects) {
     const opponentDamageReduction = attacker.currentRoundEffects.outgoingDamageReduction;
-    const damageReduction = defender.currentRoundEffects.incomingDamageReduction;
+    const damageReduction = defender.currentRoundEffects.incomingDamageReduction + (defenderEffects.incomingDamageReduction || 0);
     const shield = defenderEffects.shield;
-    const finalDamage = Math.max(0, attackerAttack.rawDamage - opponentDamageReduction - damageReduction - shield);
-    return { baseDamage:attackerAttack.baseDamage, expertBonus:attackerAttack.expertBonus, supportDamage:attackerAttack.supportDamage, opponentDamageReduction, damageReduction, shield, finalDamage };
+    const immune = defender.activeCard?.card.passives.some(item => item.kind === "immuneToDamageOnRpsWin") && defender.currentRoundEffects.rpsResult === "win";
+    const finalDamage = immune ? 0 : Math.max(0, attackerAttack.rawDamage - opponentDamageReduction - damageReduction - shield);
+    return { baseDamage:attackerAttack.baseDamage, expertBonus:attackerAttack.expertBonus, supportDamage:attackerAttack.supportDamage, opponentDamageReduction, damageReduction, shield, immune:Boolean(immune), finalDamage };
   }
   function updateHistory(match, result, playerHand, cpuHand) {
     if (result === "draw") return;
@@ -469,7 +514,7 @@
     for (const effect of effects) {
       const condition = effect.condition;
       const matches = condition.kind === "handIs" ? hand === condition.hand
-        : condition.kind === "rpsResult" ? rpsResult === condition.result
+        : condition.kind === "rpsResult" ? rpsResult === condition.result && (!condition.hand || hand === condition.hand)
         : condition.kind === "finalDieParity" ? (finalDie % 2 === 0) === (condition.parity === "even")
         : false;
       if (!matches) continue;
@@ -501,7 +546,7 @@
     return {from:old.card.name,to:null,slotIndex:null};
   }
   function livingCards(side) { return side.battleCards.filter(card => !card.knockedOut && card.currentHp>0); }
-  function reviveCard(side, instanceId, hpPercent = 50) {
+  function reviveCard(side, instanceId, hpPercent = 50, match = null) {
     if(side.revivalUsed) return null;
     const index=side.graveyard.findIndex(item=>item.instanceId===instanceId);
     if(index<0) return null;
@@ -513,10 +558,13 @@
     side.revivalUsed=true;
     // Revival HP uses floor to keep all percentage-based revival results integral.
     card.currentHp=Math.floor(card.maxHp*hpPercent/100);
+    if (card.card.awakening?.kind === "reviveAfterKnockout") awakenUnit(match, card);
     if(!side.activeCard) { side.activeBattleCardIndex=card.slotIndex; card.hasEnteredBattle=true; }
     return {instanceId,cardId:card.cardId,name:card.card.name,hp:card.currentHp,maxHp:card.maxHp,slotIndex:card.slotIndex,previousSlot:entry.slotIndex};
   }
   function finalizeRound(match, entry) {
+    awakenTeamThresholds(match, match.player, entry);
+    awakenTeamThresholds(match, match.cpu, entry);
     const revivedNames=entry.revived.map(item=>`${item.name} HP${item.hp}/${item.maxHp}で元の枠${item.slotIndex+1}へ復活`);
     entry.lines.push(...revivedNames);
     const pLiving=livingCards(match.player).length; const cLiving=livingCards(match.cpu).length;
@@ -533,7 +581,7 @@
   function completeReviveChoice(match, instanceId) {
     if(match.status!=="reviveChoice"||!match.pendingRevive) throw new Error("No revive choice is pending");
     const target=match.pendingRevive.side;
-    const revived=reviveCard(target,instanceId,match.pendingRevive.hpPercent);
+    const revived=reviveCard(target,instanceId,match.pendingRevive.hpPercent,match);
     if(!revived) throw new Error("Invalid revival candidate");
     if(match.pendingRevive.sourceUnit?.card.triggers.some(trigger=>trigger.effects.some(effect=>effect.kind==="revive"&&effect.condition?.usesPerBattle))) match.pendingRevive.sourceUnit.oncePerBattleUsed=true;
     match.pendingRevive.entry.revived.push(revived);
@@ -621,10 +669,10 @@
       if(request.sideId==="cpu") {
         const chosen=options.map(id=>request.side.battleCards.find(item=>item.instanceId===id)).sort((a,b)=>b.maxHp-a.maxHp)[0];
         const effects=request.side===p?pEffects:cEffects;
-        const revived=reviveCard(request.side,chosen.instanceId,effects.reviveHpPercent); if(revived) { entry.revived.push(revived); if(effects.reviveSourceUnit?.card.triggers.some(trigger=>trigger.effects.some(effect=>effect.kind==="revive"&&effect.condition?.usesPerBattle))) effects.reviveSourceUnit.oncePerBattleUsed=true; }
+        const revived=reviveCard(request.side,chosen.instanceId,effects.reviveHpPercent,match); if(revived) { entry.revived.push(revived); if(effects.reviveSourceUnit?.card.triggers.some(trigger=>trigger.effects.some(effect=>effect.kind==="revive"&&effect.condition?.usesPerBattle))) effects.reviveSourceUnit.oncePerBattleUsed=true; }
       } else if(options.length===1) {
         const effects=request.side===p?pEffects:cEffects;
-        const revived=reviveCard(request.side,options[0],effects.reviveHpPercent); if(revived) { entry.revived.push(revived); if(effects.reviveSourceUnit?.card.triggers.some(trigger=>trigger.effects.some(effect=>effect.kind==="revive"&&effect.condition?.usesPerBattle))) effects.reviveSourceUnit.oncePerBattleUsed=true; }
+        const revived=reviveCard(request.side,options[0],effects.reviveHpPercent,match); if(revived) { entry.revived.push(revived); if(effects.reviveSourceUnit?.card.triggers.some(trigger=>trigger.effects.some(effect=>effect.kind==="revive"&&effect.condition?.usesPerBattle))) effects.reviveSourceUnit.oncePerBattleUsed=true; }
       } else {
         const effects=request.side===p?pEffects:cEffects;
         match._pendingEntry=entry; match.pendingRevive={side:request.side,candidates:options,entry,hpPercent:effects.reviveHpPercent,sourceUnit:effects.reviveSourceUnit}; match.status="reviveChoice"; match.pendingRound=null;
@@ -647,7 +695,7 @@
     for(const request of match.pendingRevives) {
       const instanceId=choices?.[request.sideId];
       if(!request.candidates.includes(instanceId)) throw new Error("Invalid online revival choice");
-      const revived=reviveCard(request.side,instanceId,request.hpPercent);
+      const revived=reviveCard(request.side,instanceId,request.hpPercent,match);
       if(!revived) throw new Error("Online revival failed");
       if(request.sourceUnit?.card.triggers.some(trigger=>trigger.effects.some(effect=>effect.kind==="revive"&&effect.condition?.usesPerBattle))) request.sourceUnit.oncePerBattleUsed=true;
       entry.revived.push(revived);

@@ -11,7 +11,8 @@
   const card = (id, name, attribute, rarity, hp, dice, supports, options = {}) => ({
     id, name, attribute, rarity, baseHp: hp, dice: [...dice], support: supports,
     triggers: options.triggers || [], passives: options.passives || [],
-    unresolved: options.unresolved || [], description: options.description || ""
+    unresolved: options.unresolved || [], awakening: options.awakening || null,
+    formationRestriction: options.formationRestriction || null, description: options.description || ""
   });
 
   window.CARD_DATA = [
@@ -74,9 +75,27 @@
     // Rare — White
     card("r-white-sword-saint","剣聖","white","rare",115,[15,20,25,30,40,50],support(variant("damageBonus",20,"currentBattleAttribute:white",30)),{passives:[effect("formationScaling",{5:{hp:115,damageBonus:0},4:{hp:145,damageBonus:15},3:{hp:165,damageBonus:20},2:{hp:180,damageBonus:25},1:{hp:220,damageBonus:30}},{timing:"battleStart",key:"battleCardCount"},{label:"剣聖"})],description:"編成枚数で最大HPとダメージ補正が変化。"}),
     card("r-white-hunter","狩人","white","rare",115,[10,15,20,25,35,45],support(effect("damageBonus",20),effect("reroll",1)),{passives:[effect("damageBonusPerOpponentBattleCardRemaining",{5:15,4:10,3:5,2:0,1:0},null,{label:"狩猟本能"})]}),
-    card("r-white-arbiter","調停者","white","rare",120,[15,20,30,35,45,55],support(effect("suppressRpsDieModifier",1,{scope:"bothPlayers",duration:"thisRound"})),{passives:[effect("suppressRpsDieModifier",1,{scope:"bothPlayers",while:"thisCardIsCurrentBattleCard"},{label:"調停"})],description:"じゃんけん結果そのもの、得意手勝利ボーナス、および条件付き能力は通常通り。"})
+    card("r-white-arbiter","調停者","white","rare",120,[15,20,30,35,45,55],support(effect("suppressRpsDieModifier",1,{scope:"bothPlayers",duration:"thisRound"})),{passives:[effect("suppressRpsDieModifier",1,{scope:"bothPlayers",while:"thisCardIsCurrentBattleCard"},{label:"調停"})],description:"じゃんけん結果そのもの、得意手勝利ボーナス、および条件付き能力は通常通り。"}),
+    // Legends — excluded from regular random rosters; available in manual test pools.
+    card("l-red-suzaku","朱雀","red","legend",50,[5,10,15,20,25,30],support(effect("revive",100,{source:"graveyard",target:"chosenCard",hpPercent:100})),{
+      awakening:{kind:"reviveAfterKnockout",maxHp:180,dice:[25,30,40,45,55,60],hpPolicy:"full",triggers:[trigger(6,effect("heal",40))],label:"朱雀"},
+      description:"雛の状態でKOされた後、蘇生に成功すると全回復して朱雀に覚醒。覚醒後の出目6で自身を40回復。"
+    }),
+    card("l-blue-seiryu","青龍","blue","legend",90,[10,15,20,25,30,35],support(effect("damageBonus",50),effect("damageBonus",30,{kind:"rpsResult",result:"win",hand:"paper"})),{
+      awakening:{kind:"teamPaperWins",threshold:3,maxHp:170,dice:[35,45,50,60,70,80],hpPolicy:"preserveDamage",label:"青龍"},
+      description:"味方全体のパー勝利が累計3回になると、ラウンド終了後に覚醒。覚醒時点の被ダメージ量を引き継ぐ。"
+    }),
+    card("l-green-genbu","玄武","green","legend",100,[5,10,15,20,25,30],support(effect("damageBonus",30),effect("damageReduction",30)),{
+      awakening:{kind:"teamRpsLosses",threshold:5,maxHp:200,dice:[20,25,30,35,40,50],hpPolicy:"preserveDamage",label:"玄武",passives:[effect("damageReduction",10)],triggers:[trigger(5,effect("damageReduction",5)),trigger(6,effect("damageReduction",10))]},
+      description:"味方全体のじゃんけん敗北が累計5回になると覚醒。覚醒時点の被ダメージ量を引き継ぐ。覚醒後は常時被ダメージ-10。出目5/6はそのラウンドさらに軽減。"
+    }),
+    card("l-white-byakko","白虎","white","legend",150,[35,40,50,55,65,75],support(effect("rawDieOverride",6,null,{target:"self"}),effect("damageBonus",40)),{
+      passives:[effect("immuneToDamageOnRpsWin",1,{scope:"thisCard"},{label:"白虎"})],
+      formationRestriction:{battleCardCount:1,exclusive:true},
+      description:"バトル編成は白虎1体のみ。じゃんけん勝利ラウンドは受けるダメージをすべて0にする。"
+    })
   ];
 
   window.CARD_ATTRIBUTE_LABELS = { red: "赤", blue: "青", green: "緑", white: "白" };
-  window.CARD_RARITY_LABELS = { normal: "NORMAL", rare: "RARE" };
+  window.CARD_RARITY_LABELS = { normal: "NORMAL", rare: "RARE", legend: "LEGEND" };
 })();

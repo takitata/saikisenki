@@ -50,6 +50,9 @@
     if (!Array.isArray(battleInstanceIds) || battleInstanceIds.length < 1 || battleInstanceIds.length > 5) return null;
     const known = new Set((deal?.cards || []).map(card => card.instanceId));
     if (battleInstanceIds.some(id => !known.has(id)) || new Set(battleInstanceIds).size !== battleInstanceIds.length) return null;
+    const definitions = new Map((window.CARD_DATA || []).map(card => [card.id, card]));
+    const chosen = battleInstanceIds.map(id => definitions.get(deal.cards.find(card => card.instanceId === id)?.definitionId));
+    if (chosen.some(card => card?.formationRestriction?.exclusive) && battleInstanceIds.length !== 1) return null;
     return { battleInstanceIds: [...battleInstanceIds], ready: true, readyAt: Date.now() };
   }
   window.OnlineRoomSchema = { createRoomSeed, claimGuestSlot, createOnlineDeal, createOnlineFormation };

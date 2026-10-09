@@ -11,7 +11,7 @@
   });
   const stableSupport = (round, role, choice) => JSON.stringify({
     protocol: "saikisenki-support-v1", round, role,
-    supportId: choice.supportId || "", supportDefinitionId: choice.supportDefinitionId || "", nonce: choice.nonce
+    supportId: choice.supportId || "", supportDefinitionId: choice.supportDefinitionId || "", reviveTargetId: choice.reviveTargetId || "", nonce: choice.nonce
   });
   async function sha256(value) {
     const digest = await crypto.subtle.digest("SHA-256", encoder.encode(value));
@@ -24,7 +24,7 @@
     return (await createCommitment(round, role, choice)) === expectedHash;
   }
   async function verifySupportReveal(round, role, choice, expectedHash) {
-    if (!choice || typeof choice.supportId !== "string" || typeof choice.supportDefinitionId !== "string" || typeof choice.nonce !== "string") return false;
+    if (!choice || typeof choice.supportId !== "string" || typeof choice.supportDefinitionId !== "string" || typeof (choice.reviveTargetId || "") !== "string" || typeof choice.nonce !== "string") return false;
     if (Boolean(choice.supportId) !== Boolean(choice.supportDefinitionId)) return false;
     return (await createSupportCommitment(round, role, choice)) === expectedHash;
   }
@@ -68,7 +68,7 @@
         maxHp: unit.maxHp, currentHp: unit.currentHp, knockedOut: unit.knockedOut,
         hasEnteredBattle: unit.hasEnteredBattle, accumulatedDamageBonus: unit.accumulatedDamageBonus,
         oncePerBattleUsed: unit.oncePerBattleUsed, rockUses: unit.rockUses,
-        battleStartDamageBonus: unit.battleStartDamageBonus, battleStartHpBonus: unit.battleStartHpBonus
+        battleStartDamageBonus: unit.battleStartDamageBonus, battleStartHpBonus: unit.battleStartHpBonus, awakened: Boolean(unit.awakened)
       })),
       usedSupportCards: side.usedSupportCards.map(item => ({ instanceId: item.instanceId, cardId: item.cardId, usedRound: item.usedRound })).sort((a,b) => a.usedRound-b.usedRound || a.instanceId.localeCompare(b.instanceId)),
       supportUsedThisRound: side.supportUsedThisRound, graveyard: side.graveyard.map(item => ({ ...item })),
@@ -107,6 +107,7 @@
     return {
       round: match.round, status: match.status, outcome: hostIsPlayer ? match.outcome : (match.outcome === "WIN" ? "LOSE" : match.outcome === "LOSE" ? "WIN" : match.outcome),
       sides: { host: sideSnapshot(hostSide), guest: sideSnapshot(guestSide) },
+      battleCounters: { host: { ...match.battleState.counters[hostSide.id] }, guest: { ...match.battleState.counters[guestSide.id] } },
       supportLockNextRound: { host: hostIsPlayer ? match.supportLockNextRound.player : match.supportLockNextRound.cpu, guest: hostIsPlayer ? match.supportLockNextRound.cpu : match.supportLockNextRound.player },
       history: { host: JSON.parse(JSON.stringify(hostHistory)), guest: JSON.parse(JSON.stringify(guestHistory)) },
       lastResult: match.lastResultEntry ? {
@@ -206,7 +207,7 @@
   }
   function applySupportChoices(engine, match, ownChoice, opponentChoice) {
     if (opponentChoice.supportId) addRevealedSupport(match.cpu, { instanceId: opponentChoice.supportId, cardId: opponentChoice.supportDefinitionId });
-    engine.finishPairedSupportPhase(match, ownChoice.supportId || null, opponentChoice.supportId || null);
+    engine.finishPairedSupportPhase(match, ownChoice.supportId || null, opponentChoice.supportId || null, { playerReviveTargetId:ownChoice.reviveTargetId || null, cpuReviveTargetId:opponentChoice.reviveTargetId || null });
   }
   function prepareSupportPhase(engine, match, ownSupport, opponentSupport) {
     if (match.status === "supportSelection") applySupportChoices(engine, match, ownSupport, opponentSupport);
