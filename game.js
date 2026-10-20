@@ -13,6 +13,7 @@
   let activeFilter = "all";
   let selectedSupportId = null;
   let selectedReviveTargetId = "";
+  let selectedSwitchTargetId = "";
   let toastTimer;
   let match = null;
   let onlineBattleMode = false;
@@ -85,6 +86,7 @@
       case "damageBonus": return `ダメージ+${amount}${alternative || when}`;
       case "damageReduction": return `受けるダメージ-${amount}${item.conditional ? `（${conditionText(item.conditional.condition).replace("カードが場にいる時", "なら")}-${item.conditional.value}）` : when}`;
       case "heal": return `${amount}回復${alternative || when}`;
+      case "switchBattleCard": return "生存している控えカードと交代";
       case "selfDamage": return `自分に${amount}ダメージ`;
       case "shield": return `シールド${amount}`;
       case "dieModifier": return item.attributeBonus ? `自分のダイス+${amount}（${window.CARD_ATTRIBUTE_LABELS[item.attribute]}カードが場にいれば+${item.attributeBonus}）` : `自分のダイス+${amount}${when}`;
@@ -349,6 +351,7 @@
       <div class="combatant-top"><span class="rarity ${card.rarity}">${window.CARD_RARITY_LABELS[card.rarity]}</span><span class="attribute-label">${window.CARD_ATTRIBUTE_LABELS[card.attribute]}</span><span class="active-chip">ACTIVE</span></div>
       <h3>${card.name}</h3><div class="hp-numbers"><span>HP</span><b>${active.currentHp}</b><i>/</i><span>${active.maxHp}</span></div><div class="hp-track"><span style="width:${hpPct}%"></span></div>
       <div class="battle-dice-label">タップしてカード詳細</div><div class="battle-dice">${activeDice.map((v,i)=>`<span><small>${i+1}</small><b>${v}</b></span>`).join("")}</div>${active.awakened?`<div class="special-note awakening-state">覚醒済み</div>`:""}${cardSpecialNote(card,side)}</article>`
+      : remaining.length ? `<div class="combatant-card empty"><div class="empty-symbol">…</div><h3>次のカードを選択中</h3><p>生存しているバトルカード：${remaining.length}枚</p></div>`
       : `<div class="combatant-card empty"><div class="empty-symbol">×</div><h3>全カードKO</h3><p>このチームのバトルカードは残っていません。</p></div>`;
     const inspectRows = (items, kind) => items.length ? items.map(item => {
       const definition = byId.get(item.cardId || item.card?.id);
@@ -451,8 +454,10 @@
     if (!onlineBattleMode || !onlinePublicSupports) { target.hidden = true; target.innerHTML = ""; return; }
     const renderChoice = (label, choice, sealed) => {
       const card = choice?.supportDefinitionId ? byId.get(choice.supportDefinitionId) : null;
-      const revived=choice?.reviveTargetId?match[label==="あなた"?"player":"cpu"].battleCards.find(unit=>unit.instanceId===choice.reviveTargetId)?.card.name:"";
-      return `<article class="online-support-reveal-card"><span class="panel-kicker">${label}</span><b>${card ? card.name : sealed ? "サポートなし（封印）" : "サポートなし"}</b><small>${card ? `${supportText(card)}${revived?` · 蘇生対象：${revived}`:""}` : sealed ? "封印術師の効果により、このラウンドはサポートを使用できません。" : "このラウンドはサポートを使用しません。"}</small></article>`;
+      const side=match[label==="あなた"?"player":"cpu"];
+      const revived=choice?.reviveTargetId?side.battleCards.find(unit=>unit.instanceId===choice.reviveTargetId)?.card.name:"";
+      const switched=choice?.switchTargetId?side.battleCards.find(unit=>unit.instanceId===choice.switchTargetId)?.card.name:"";
+      return `<article class="online-support-reveal-card"><span class="panel-kicker">${label}</span><b>${card ? card.name : sealed ? "サポートなし（封印）" : "サポートなし"}</b><small>${card ? `${supportText(card)}${revived?` · 蘇生対象：${revived}`:""}${switched?` · 交代先：${switched}`:""}` : sealed ? "封印術師の効果により、このラウンドはサポートを使用できません。" : "このラウンドはサポートを使用しません。"}</small></article>`;
     };
     target.hidden = false;
     target.innerHTML = `<div class="online-support-reveal-heading"><span class="panel-kicker">SUPPORT REVEALED</span><strong>両者のサポートが公開されました</strong></div><div class="online-support-reveal-grid">${renderChoice("あなた", onlinePublicSupports.own, onlinePublicSupports.ownSealed)}${renderChoice("相手", onlinePublicSupports.opponent, onlinePublicSupports.opponentSealed)}</div>`;
@@ -478,17 +483,31 @@
     const selected=cards.find(item=>item.instanceId===selectedSupportId);
     const card=selected?byId.get(selected.cardId):null;
     const reviveEffect=card?.support.find(item=>item.kind==="revive");
+    const switchEffect=card?.support.some(item=>item.kind==="switchBattleCard");
+    const switchCandidates=match.player.battleCards.filter(unit=>!unit.knockedOut&&unit.currentHp>0&&unit!==match.player.activeCard);
+    if(!switchCandidates.some(unit=>unit.instanceId===selectedSwitchTargetId)) selectedSwitchTargetId="";
+    const switchTargetControl=switchEffect?(switchCandidates.length?`<label class="support-revive-target">交代するカード<select id="supportSwitchTarget"><option value="">選択してください</option>${switchCandidates.map(unit=>`<option value="${unit.instanceId}" ${selectedSwitchTargetId===unit.instanceId?"selected":""}>${unit.card.name}（HP${unit.currentHp}/${unit.maxHp}）</option>`).join("")}</select></label>`:`<small class="support-revive-note">交代できる生存控えカードがありません。</small>`):"";
     const reviveCandidates=match.player.graveyard.map(item=>match.player.battleCards.find(unit=>unit.instanceId===item.instanceId)).filter(Boolean);
     const reviveTargetRequired=Boolean(reviveEffect && reviveCandidates.length && !match.player.revivalUsed);
     if (!reviveCandidates.some(unit=>unit.instanceId===selectedReviveTargetId)) selectedReviveTargetId="";
     const reviveTargetControl=reviveTargetRequired?`<label class="support-revive-target">蘇生するカード<select id="supportReviveTarget"><option value="">選択してください</option>${reviveCandidates.map(unit=>`<option value="${unit.instanceId}" ${selectedReviveTargetId===unit.instanceId?"selected":""}>${unit.card.name}（HP${unit.maxHp}）</option>`).join("")}</select></label>`:reviveEffect?`<small class="support-revive-note">${match.player.revivalUsed?"この試合の蘇生権は使用済みです。":"墓地に蘇生できるカードがありません。"}</small>`:"";
     const waitText=onlineSupportPhaseState.supportRevealed?"両者のサポートが公開されました。":onlineSupportPhaseState.waitingForOpponentSupport?"相手のサポート選択を待っています。":"";
-    $("#supportPreview").innerHTML=(card?`<strong>${card.name}の効果</strong><span>${supportText(card)}</span>${supportWarning(card)}${reviveTargetControl}`:"サポートを選ぶと効果が表示されます。")+(gameSealed?`<span class="support-warning">封印術師の能力により、このラウンドはサポートを使用できません。</span>`:supportCommitted?`<span class="support-warning">サポート確定済み${waitText?` · ${waitText}`:""}</span>`:commitPending?`<span class="support-warning">サポート確定を送信しています…</span>`:"");
-    $("#useSupportButton").disabled=!card||locked||(reviveTargetRequired&&!selectedReviveTargetId);
+    $("#supportPreview").innerHTML=(card?`<strong>${card.name}の効果</strong><span>${supportText(card)}</span>${supportWarning(card)}${reviveTargetControl}${switchTargetControl}`:"サポートを選ぶと効果が表示されます。")+(gameSealed?`<span class="support-warning">封印術師の能力により、このラウンドはサポートを使用できません。</span>`:supportCommitted?`<span class="support-warning">サポート確定済み${waitText?` · ${waitText}`:""}</span>`:commitPending?`<span class="support-warning">サポート確定を送信しています…</span>`:"");
+    $("#useSupportButton").disabled=!card||locked||(reviveTargetRequired&&!selectedReviveTargetId)||(switchEffect&&(!switchCandidates.length||!selectedSwitchTargetId));
     $("#skipSupportButton").disabled=supportCommitted||commitPending;
     $("#skipSupportButton").textContent=gameSealed?"封印中：サポートなしを確定":supportCommitted?"サポート確定済み":commitPending?"確定中…":"サポートを使わない";
   }
 
+  function renderHealControls() {
+    const choices=engine.livingCards(match.player).filter(unit=>unit.currentHp<unit.maxHp);
+    $("#healChoiceList").innerHTML=choices.map(unit=>`<button class="revive-pick" data-heal-instance="${unit.instanceId}" ${onlineBattleMode&&onlineBattleStatus.includes("回復対象を確定済み")?"disabled":""}><b>${unit.card.name}</b><span>HP ${unit.currentHp} / ${unit.maxHp}</span><small>最大HP ${unit.maxHp}まで回復</small></button>`).join("")||"<p class=\"log-empty\">回復できるカードがありません。</p>";
+  }
+  function chooseHealTarget(instanceId) { if(!match||match.status!=="healChoice")return; if(onlineBattleMode){Promise.resolve(onlineBattleController?.submitHealTarget(instanceId)).catch(error=>notify(error.message||"オンライン操作に失敗しました"));return;} engine.completeHealChoice(match,"player",instanceId);renderBattle();$("#battleLog").scrollTop=0; }
+  function renderNextCardControls() {
+    const choices=engine.livingCards(match.player).filter(unit=>unit!==match.player.activeCard);
+    $("#nextCardChoiceList").innerHTML=choices.map(unit=>`<button class="revive-pick" data-next-card-instance="${unit.instanceId}" ${onlineBattleMode&&onlineBattleStatus.includes("カードを確定済み")?"disabled":""}><b>${unit.card.name}</b><span>HP ${unit.currentHp} / ${unit.maxHp}</span><small>属性：${window.CARD_ATTRIBUTE_LABELS[unit.card.attribute]}</small></button>`).join("")||"<p class=\"log-empty\">選べる生存カードがありません。</p>";
+  }
+  function chooseNextCard(instanceId) { if(!match||match.status!=="nextCardChoice")return; if(onlineBattleMode){Promise.resolve(onlineBattleController?.submitNextCard(instanceId)).catch(error=>notify(error.message||"オンライン操作に失敗しました"));return;} engine.completeNextCardChoice(match,"player",instanceId);renderBattle();$("#battleLog").scrollTop=0; }
   function renderReviveControls() {
     const options=match.pendingRevive?.candidates||[];
     const pct=match.pendingRevive?.hpPercent||50;
@@ -515,6 +534,8 @@
     $("#handControls").hidden=status!=="handChoice";
     $("#diceControls").hidden=status!=="diceChoice";
     $("#reviveControls").hidden=status!=="reviveChoice";
+    $("#healControls").hidden=status!=="healChoice";
+    $("#nextCardControls").hidden=status!=="nextCardChoice";
     $("#nextRoundControls").hidden=status!=="roundResolved";
     document.querySelectorAll(".hand-button").forEach(button=>{button.disabled=status!=="handChoice" || Boolean(onlineBattleMode&&onlineBattleStatus.includes("じゃんけん確定済み"));});
     renderSupportControls();
@@ -528,6 +549,8 @@
       $("#keepDieButton").innerHTML=p.playerData.rerollAvailable?"この出目を使う <span>→</span>":"ダイス結果を確定 <span>→</span>";
     }
     if(status==="reviveChoice") renderReviveControls();
+    if(status==="healChoice") renderHealControls();
+    if(status==="nextCardChoice") renderNextCardControls();
     $("#battleResult").hidden = match.status !== "finished";
     $("#battleControls").hidden = status === "finished";
     const onlineFinished = onlineBattleMode && status === "finished";
@@ -546,9 +569,9 @@
   }
   function confirmSupport(instanceId, reviveTargetId = selectedReviveTargetId) {
     if(!match||match.status!=="supportSelection")return;
-    if(onlineBattleMode) { Promise.resolve(onlineBattleController?.submitSupport(instanceId,reviveTargetId)).catch(error=>notify(error.message||"オンライン操作に失敗しました")); return; }
-    engine.finishSupportPhase(match,instanceId,{rng:Math.random,playerReviveTargetId:reviveTargetId});
-    selectedSupportId=null; selectedReviveTargetId=""; renderBattle(); $("#battleLog").scrollTop=0;
+    if(onlineBattleMode) { Promise.resolve(onlineBattleController?.submitSupport(instanceId,reviveTargetId,selectedSwitchTargetId)).catch(error=>notify(error.message||"オンライン操作に失敗しました")); return; }
+    engine.finishSupportPhase(match,instanceId,{rng:Math.random,playerReviveTargetId:reviveTargetId,playerSwitchTargetId:selectedSwitchTargetId});
+    selectedSupportId=null; selectedReviveTargetId=""; selectedSwitchTargetId=""; renderBattle(); $("#battleLog").scrollTop=0;
   }
   function playHand(hand) {
     if(!match||match.status!=="handChoice")return;
@@ -599,7 +622,7 @@
     update(onlineMatch, status = "", supportState = null) { match = onlineMatch; onlineBattleMode = true; onlineBattleStatus = status; if(supportState) onlineSupportPhaseState=supportState; renderBattle(); },
     showStatus(status = "", supportState = null) { onlineBattleStatus = status; if(supportState) onlineSupportPhaseState=supportState; renderBattle(); },
     setSupportPhaseState(supportState) { onlineSupportPhaseState=supportState; if(match) renderBattle(); },
-    setSupport(instanceId = "") { selectedSupportId = instanceId || null; onlineSupportPhaseState={...onlineSupportPhaseState,supportSelected:Boolean(selectedSupportId)}; if (match) renderSupportControls(); },
+    setSupport(instanceId = "", switchTargetId = "") { selectedSupportId = instanceId || null; selectedSwitchTargetId=switchTargetId||""; onlineSupportPhaseState={...onlineSupportPhaseState,supportSelected:Boolean(selectedSupportId)}; if (match) renderSupportControls(); },
     setPublicSupports(choices = null) { onlinePublicSupports = choices; if (match) { renderOnlineSupportReveal(); renderBattle(); } },
     end() { onlineBattleMode = false; onlineBattleController = null; onlineBattleStatus = ""; onlineSupportPhaseState={supportSelected:false,supportCommitted:false,waitingForOpponentSupport:false,supportRevealed:false,supportSealedByEffect:false,supportCommitPending:false}; onlinePublicSupports = null; match = null; $("#battleView").hidden = true; }
   };
@@ -635,9 +658,9 @@
     const detail=event.target.closest(".support-detail");
     if(detail){openCardDetail(detail.dataset.inspectInstance);return;}
     const button=event.target.closest(".support-select");
-    if(button&&!button.disabled){selectedSupportId=button.dataset.supportInstance;selectedReviveTargetId="";if(onlineBattleMode)onlineSupportPhaseState={...onlineSupportPhaseState,supportSelected:true};renderSupportControls();}
+    if(button&&!button.disabled){selectedSupportId=button.dataset.supportInstance;selectedReviveTargetId="";selectedSwitchTargetId="";if(onlineBattleMode)onlineSupportPhaseState={...onlineSupportPhaseState,supportSelected:true};renderSupportControls();}
   });
-  $("#supportPreview").addEventListener("change",event=>{if(event.target.id==="supportReviveTarget"){selectedReviveTargetId=event.target.value;renderSupportControls();}});
+  $("#supportPreview").addEventListener("change",event=>{if(event.target.id==="supportReviveTarget"){selectedReviveTargetId=event.target.value;renderSupportControls();}if(event.target.id==="supportSwitchTarget"){selectedSwitchTargetId=event.target.value;renderSupportControls();}});
   for(const panel of [$("#playerBattlePanel"),$("#cpuBattlePanel")]) panel.addEventListener("click",event=>{
     const list=event.target.closest("[data-inspect-list]");
     const card=event.target.closest("[data-inspect-instance]");
@@ -654,7 +677,9 @@
   $("#rerollButton").addEventListener("click",()=>chooseReroll(true));
   $("#keepDieButton").addEventListener("click",()=>chooseReroll(false));
   $("#reviveChoiceList").addEventListener("click",event=>{const button=event.target.closest(".revive-pick");if(button)chooseRevive(button.dataset.reviveInstance);});
+  $("#healChoiceList").addEventListener("click",event=>{const button=event.target.closest("[data-heal-instance]");if(button)chooseHealTarget(button.dataset.healInstance);});
+  $("#nextCardChoiceList").addEventListener("click",event=>{const button=event.target.closest("[data-next-card-instance]");if(button)chooseNextCard(button.dataset.nextCardInstance);});
 
   renderGrid(); updateCounts(); renderPoolGrid(); refreshCpuDeck();
-  window.__gameForTesting = { get playerOwned(){return playerOwned;},get cpuOwned(){return cpuOwned;},get cpuBattleIds(){return [...cpuBattleIds];},get cpuRareCount(){return cpuRoster.rareCount;},selectedOrder,toggleSelection,showComplete,beginBattle,refreshCpuDeck,rematchSameCpu,rematchNewCpu,rematchRandomBoth,quickStart,startManualBuild,generatePlayerDeck,autoOrganizePlayer,prepareBothRandom,getMatch:()=>match,confirmSupport,playHand,chooseReroll,chooseRevive,nextRound,showHome,showBuild,showPool,togglePoolCard,acceptPoolSelection,selectAllRarePool,getPoolSelection:()=>[...poolSelectionIds],getCardAbilityText:cardId=>abilityLines(byId.get(cardId)),getCardDetailHtml:cardId=>cardDetailHtml(byId.get(cardId)),renderBattle };
+  window.__gameForTesting = { get playerOwned(){return playerOwned;},get cpuOwned(){return cpuOwned;},get cpuBattleIds(){return [...cpuBattleIds];},get cpuRareCount(){return cpuRoster.rareCount;},selectedOrder,toggleSelection,showComplete,beginBattle,refreshCpuDeck,rematchSameCpu,rematchNewCpu,rematchRandomBoth,quickStart,startManualBuild,generatePlayerDeck,autoOrganizePlayer,prepareBothRandom,getMatch:()=>match,confirmSupport,playHand,chooseReroll,chooseRevive,chooseHealTarget,chooseNextCard,nextRound,showHome,showBuild,showPool,togglePoolCard,acceptPoolSelection,selectAllRarePool,getPoolSelection:()=>[...poolSelectionIds],getCardAbilityText:cardId=>abilityLines(byId.get(cardId)),getCardDetailHtml:cardId=>cardDetailHtml(byId.get(cardId)),renderBattle };
 })();

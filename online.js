@@ -187,6 +187,18 @@ import {
       if (roundData?.rerolls?.[role] === undefined) return "生ダイス公開済み · リロールを選択してください";
       if (roundData?.rerolls?.[other] === undefined) return "リロール確定済み · 相手の選択を待っています";
     }
+    if (match?.status === "healChoice") {
+      const self=match.pendingHealChoices?.includes("player");
+      if(self&&!roundData?.healTargets?.[role]) return "回復するカードを選択してください";
+      if(self&&roundData?.healTargets?.[role]) return "回復対象を確定済み · 相手を待っています";
+      if(match.pendingHealChoices?.some(side=>side==="cpu")&&!roundData?.healTargets?.[other]) return "相手の回復対象を待っています";
+    }
+    if (match?.status === "nextCardChoice") {
+      const self=match.pendingNextCardChoices?.includes("player");
+      if(self&&!roundData?.nextCards?.[role]) return "次に戦うカードを選択してください";
+      if(self&&roundData?.nextCards?.[role]) return "次のカードを確定済み · 相手を待っています";
+      if(match.pendingNextCardChoices?.includes("cpu")&&!roundData?.nextCards?.[other]) return "相手の次カード選択を待っています";
+    }
     if (match?.status === "reviveChoice") {
       const required = match.pendingRevives?.some(item => item.sideId === "player");
       if (required && !roundData?.revives?.[role]) return "復活するカードを選択してください";
@@ -220,7 +232,8 @@ import {
       const ownChoice = { ...actions.self, supportChoice: supports.self };
       const opponentChoice = { ...actions.opponent, supportChoice: supports.opponent };
       const current = core.resolveRevealedRound(gameEngine, match, ownChoice, opponentChoice,
-        Boolean(saved.rerolls[role]), Boolean(saved.rerolls[otherRole(role)]), dice[role], dice[otherRole(role)], revivePair(saved, role));
+        Boolean(saved.rerolls[role]), Boolean(saved.rerolls[otherRole(role)]), dice[role], dice[otherRole(role)], revivePair(saved, role),
+          {player:core.rolePair(saved.healTargets,role).self,cpu:core.rolePair(saved.healTargets,role).opponent}, {player:core.rolePair(saved.nextCards,role).self,cpu:core.rolePair(saved.nextCards,role).opponent});
       if (current.status === "reviveChoice") throw new Error(`ROUND ${roundNo} の復活選択が確定していません。`);
       const actualHash = await core.hashSnapshot(core.snapshot(current, role));
       if (actualHash !== saved.resultClaims.host.hash || actualHash !== saved.resultClaims.guest.hash) throw new Error(`ROUND ${roundNo} の結果ハッシュが一致しません。`);
@@ -255,12 +268,13 @@ import {
       core.beginRevealedRound(gameEngine, match, ownChoice, opponentChoice, dice[role], dice[otherRole(role)]);
       if (saved.rerolls?.host !== undefined && saved.rerolls?.guest !== undefined) {
         match = core.finishRevealedRound(gameEngine, match,
-          Boolean(saved.rerolls[role]), Boolean(saved.rerolls[otherRole(role)]), dice[role], dice[otherRole(role)], revivePair(saved, role));
+          Boolean(saved.rerolls[role]), Boolean(saved.rerolls[otherRole(role)]), dice[role], dice[otherRole(role)], revivePair(saved, role),
+          {player:core.rolePair(saved.healTargets,role).self,cpu:core.rolePair(saved.healTargets,role).opponent}, {player:core.rolePair(saved.nextCards,role).self,cpu:core.rolePair(saved.nextCards,role).opponent});
         if (match.status === "reviveChoice") {
           const choices = revivePair(saved, role);
           if (match.pendingRevives?.every(item => choices[item.sideId])) gameEngine.completeOnlineRevives(match, choices);
         }
-        if (match.status === "roundResolved") {
+        if (match.status === "roundResolved" || match.status === "finished") {
           const resultHash = await core.hashSnapshot(core.snapshot(match, role));
           if (!saved.resultClaims?.[role]) await writeOnce(roundRolePath(currentRoom.roomId, roundNo, "resultClaims", role), { hash: resultHash }, { roomId:currentRoom.roomId, round:roundNo, myRole:role });
           if (core.isSettledRound(saved) && (saved.resultClaims.host.hash !== resultHash || saved.resultClaims.guest.hash !== resultHash)) throw new Error(`ROUND ${roundNo} の結果ハッシュが一致しません。`);
@@ -274,7 +288,7 @@ import {
     const supportState = core.supportPhaseState(saved, role, supportSealedByEffect, localDraft.supportId || "");
     if (!document.querySelector("#battleView")?.hidden) setBattleStatus(status, match, false, supportState);
     else setBattleStatus(status, match, true, supportState);
-    window.CPUOnlineBattleUI?.setSupport(localDraft.supportId || "");
+    window.CPUOnlineBattleUI?.setSupport(localDraft.supportId || "", localDraft.switchTargetId || "");
     if (match.status === "diceChoice" && !match.pendingRound.playerData.rerollAvailable && saved.rerolls?.[role] === undefined) {
       await writeOnce(roundRolePath(currentRoom.roomId, roundNo, "rerolls", role), false, { roomId:currentRoom.roomId, round:roundNo, myRole:role });
     }
@@ -294,7 +308,7 @@ import {
   }
   function makeBattleController() {
     return {
-      async submitSupport(instanceId, reviveTargetId = null) {
+      async submitSupport(instanceId, reviveTargetId = null, switchTargetId = null) {
         if (!currentRoom || !onlineBattleMatch || onlineBattleMatch.status !== "supportSelection") return;
         const round = activeOnlineRound();
         const { myRole: role } = roleContext();
@@ -307,9 +321,12 @@ import {
         const definition = owned ? window.CARD_DATA.find(card => card.id === owned.definitionId) : null;
         const needsReviveTarget = Boolean(definition?.support.some(effect => effect.kind === "revive") && onlineBattleMatch.player.graveyard.length && !onlineBattleMatch.player.revivalUsed);
         if (needsReviveTarget && !onlineBattleMatch.player.graveyard.some(item => item.instanceId === reviveTargetId)) throw new Error("蘇生する墓地カードを選んでください。");
-        const choice = { supportId: owned?.instanceId || "", supportDefinitionId: owned?.definitionId || "", reviveTargetId: needsReviveTarget ? reviveTargetId : "", nonce: core.randomHex() };
+        const needsSwitchTarget = Boolean(definition?.support.some(effect => effect.kind === "switchBattleCard") && onlineBattleMatch.player.battleCards.some(unit => !unit.knockedOut && unit.currentHp > 0 && unit !== onlineBattleMatch.player.activeCard));
+        if (definition?.support.some(effect => effect.kind === "switchBattleCard") && !needsSwitchTarget) throw new Error("交代できる生存控えカードがありません。");
+        if (needsSwitchTarget && !onlineBattleMatch.player.battleCards.some(unit => unit.instanceId === switchTargetId && !unit.knockedOut && unit.currentHp > 0 && unit !== onlineBattleMatch.player.activeCard)) throw new Error("交代先のカードを選んでください。");
+        const choice = { supportId: owned?.instanceId || "", supportDefinitionId: owned?.definitionId || "", reviveTargetId: needsReviveTarget ? reviveTargetId : "", switchTargetId: needsSwitchTarget ? switchTargetId : "", nonce: core.randomHex() };
         try {
-          sessionStorage.setItem(supportDraftKey(currentRoom.roomId, round), JSON.stringify({ supportId: choice.supportId, reviveTargetId:choice.reviveTargetId }));
+          sessionStorage.setItem(supportDraftKey(currentRoom.roomId, round), JSON.stringify({ supportId: choice.supportId, reviveTargetId:choice.reviveTargetId, switchTargetId:choice.switchTargetId }));
           if (!writeSupportSecret(currentRoom.roomId, round, choice)) throw new Error("サポート選択をこのブラウザーに一時保存できませんでした。");
           window.CPUOnlineBattleUI?.setSupportPhaseState(core.supportPhaseState(currentRoomState?.match?.rounds?.[String(round)] || {}, role, sealed, choice.supportId, true));
           setBattleStatus("サポート確定を送信しています…", onlineBattleMatch);
@@ -349,6 +366,16 @@ import {
         const round = activeOnlineRound();
         const { myRole: role } = roleContext();
         await writeOnce(roundRolePath(currentRoom.roomId, round, "rerolls", role), Boolean(value), { roomId:currentRoom.roomId, round, myRole:role });
+      },
+      async submitHealTarget(instanceId) {
+        const round=activeOnlineRound(),{myRole:role}=roleContext();
+        if(!onlineBattleMatch?.pendingHealChoices?.includes("player")||!onlineBattleMatch.player.battleCards.some(unit=>unit.instanceId===instanceId&&!unit.knockedOut&&unit.currentHp>0&&unit.currentHp<unit.maxHp)) throw new Error("回復対象を選べません。");
+        await writeOnce(roundRolePath(currentRoom.roomId,round,"healTargets",role),instanceId,{roomId:currentRoom.roomId,round,myRole:role});
+      },
+      async submitNextCard(instanceId) {
+        const round=activeOnlineRound(),{myRole:role}=roleContext();
+        if(!onlineBattleMatch?.pendingNextCardChoices?.includes("player")||!gameEngine.livingCards(onlineBattleMatch.player).some(unit=>unit.instanceId===instanceId)) throw new Error("次のバトルカードを選べません。");
+        await writeOnce(roundRolePath(currentRoom.roomId,round,"nextCards",role),instanceId,{roomId:currentRoom.roomId,round,myRole:role});
       },
       async submitRevive(instanceId) {
         const round = activeOnlineRound();

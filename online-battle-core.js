@@ -11,7 +11,7 @@
   });
   const stableSupport = (round, role, choice) => JSON.stringify({
     protocol: "saikisenki-support-v1", round, role,
-    supportId: choice.supportId || "", supportDefinitionId: choice.supportDefinitionId || "", reviveTargetId: choice.reviveTargetId || "", nonce: choice.nonce
+    supportId: choice.supportId || "", supportDefinitionId: choice.supportDefinitionId || "", reviveTargetId: choice.reviveTargetId || "", switchTargetId: choice.switchTargetId || "", nonce: choice.nonce
   });
   async function sha256(value) {
     const digest = await crypto.subtle.digest("SHA-256", encoder.encode(value));
@@ -24,7 +24,7 @@
     return (await createCommitment(round, role, choice)) === expectedHash;
   }
   async function verifySupportReveal(round, role, choice, expectedHash) {
-    if (!choice || typeof choice.supportId !== "string" || typeof choice.supportDefinitionId !== "string" || typeof (choice.reviveTargetId || "") !== "string" || typeof choice.nonce !== "string") return false;
+    if (!choice || typeof choice.supportId !== "string" || typeof choice.supportDefinitionId !== "string" || typeof (choice.reviveTargetId || "") !== "string" || typeof (choice.switchTargetId || "") !== "string" || typeof choice.nonce !== "string") return false;
     if (Boolean(choice.supportId) !== Boolean(choice.supportDefinitionId)) return false;
     return (await createSupportCommitment(round, role, choice)) === expectedHash;
   }
@@ -101,9 +101,10 @@
     const hostSwitch = hostIsPlayer ? entry?.switches?.player : entry?.switches?.cpu;
     const guestSwitch = hostIsPlayer ? entry?.switches?.cpu : entry?.switches?.player;
     const damageView = value => value ? { finalDamage: value.finalDamage, opponentDamageReduction: value.opponentDamageReduction, damageReduction: value.damageReduction, shield: value.shield } : null;
-    const hpView = value => value ? { before: value.before, healedTo: value.healedTo, incoming: value.incoming, selfDamage: value.selfDamage, after: value.after, knockedOut: value.knockedOut } : null;
+    const hpView = value => value ? { before: value.before, healedTo: value.healedTo, healTargetId:value.healTargetId||null, healTargetBefore:value.healTargetBefore??null, healTargetAfter:value.healTargetAfter??null, incoming: value.incoming, selfDamage: value.selfDamage, after: value.after, knockedOut: value.knockedOut } : null;
     const attackView = value => value ? { cardId: value.card?.id, baseDamage: value.baseDamage, expertBonus: value.expertBonus, supportDamage: value.supportDamage, passiveBonus: value.passiveBonus, rawDamage: value.rawDamage } : null;
-    const effectsView = value => value ? { healing: value.healing, shield: value.shield, selfDamage: value.selfDamage, nextEffects: value.nextEffects.map(item => ({...item})), reviveCandidates: [...value.reviveCandidates], reviveHpPercent: value.reviveHpPercent, log: [...value.log] } : null;
+    const localLabel=localRole==="host"?"ホスト":"ゲスト", opponentLabel=localRole==="host"?"ゲスト":"ホスト";
+    const effectsView = value => value ? { healing: value.healing, shield: value.shield, selfDamage: value.selfDamage, nextEffects: value.nextEffects.map(item => ({...item})), reviveCandidates: [...value.reviveCandidates], reviveHpPercent: value.reviveHpPercent, log: value.log.map(line=>line.replace("あなた：",`${localLabel}：`).replace("相手：",`${opponentLabel}：`)) } : null;
     return {
       round: match.round, status: match.status, outcome: hostIsPlayer ? match.outcome : (match.outcome === "WIN" ? "LOSE" : match.outcome === "LOSE" ? "WIN" : match.outcome),
       sides: { host: sideSnapshot(hostSide), guest: sideSnapshot(guestSide) },
@@ -207,7 +208,7 @@
   }
   function applySupportChoices(engine, match, ownChoice, opponentChoice) {
     if (opponentChoice.supportId) addRevealedSupport(match.cpu, { instanceId: opponentChoice.supportId, cardId: opponentChoice.supportDefinitionId });
-    engine.finishPairedSupportPhase(match, ownChoice.supportId || null, opponentChoice.supportId || null, { playerReviveTargetId:ownChoice.reviveTargetId || null, cpuReviveTargetId:opponentChoice.reviveTargetId || null });
+    engine.finishPairedSupportPhase(match, ownChoice.supportId || null, opponentChoice.supportId || null, { playerReviveTargetId:ownChoice.reviveTargetId || null, cpuReviveTargetId:opponentChoice.reviveTargetId || null, playerSwitchTargetId:ownChoice.switchTargetId || null, cpuSwitchTargetId:opponentChoice.switchTargetId || null });
   }
   function prepareSupportPhase(engine, match, ownSupport, opponentSupport) {
     if (match.status === "supportSelection") applySupportChoices(engine, match, ownSupport, opponentSupport);
@@ -220,18 +221,19 @@
     engine.startRpsAndRoll(match, ownChoice.hand, { rng: rngFor([ownDice.initial, opponentDice.initial]), cpuHand: opponentChoice.hand, autoCpuReroll: false });
     return match;
   }
-  function resolveRevealedRound(engine, match, ownChoice, opponentChoice, ownReroll, opponentReroll, ownDice, opponentDice, reviveChoices = {}) {
+  function resolveRevealedRound(engine, match, ownChoice, opponentChoice, ownReroll, opponentReroll, ownDice, opponentDice, reviveChoices = {}, healChoices = {}, nextCardChoices = {}) {
     beginRevealedRound(engine, match, ownChoice, opponentChoice, ownDice, opponentDice);
-    return finishRevealedRound(engine, match, ownReroll, opponentReroll, ownDice, opponentDice, reviveChoices);
+    return finishRevealedRound(engine, match, ownReroll, opponentReroll, ownDice, opponentDice, reviveChoices, healChoices, nextCardChoices);
   }
-  function finishRevealedRound(engine, match, ownReroll, opponentReroll, ownDice, opponentDice, reviveChoices = {}) {
+  function finishRevealedRound(engine, match, ownReroll, opponentReroll, ownDice, opponentDice, reviveChoices = {}, healChoices = {}, nextCardChoices = {}) {
     const rerollValues = [];
     if (ownReroll) rerollValues.push(ownDice.reroll);
     if (opponentReroll) rerollValues.push(opponentDice.reroll);
-    engine.decideRerolls(match, { player: ownReroll, cpu: opponentReroll }, { rng: rngFor(rerollValues), deferRevives: true });
+    engine.decideRerolls(match, { player: ownReroll, cpu: opponentReroll }, { rng: rngFor(rerollValues), deferRevives: true, deferHealChoices: true, deferNextCardChoices: true, healChoices, nextCardChoices });
     if (match.status === "reviveChoice" && match.pendingRevives?.every(request => reviveChoices[request.sideId])) {
       engine.completeOnlineRevives(match, reviveChoices);
     }
+    if(match.status==="nextCardChoice" && match.pendingNextCardChoices?.every(sideId=>nextCardChoices[sideId])) engine.completeOnlineNextCardChoices(match,nextCardChoices);
     return match;
   }
   return { stableAction, stableSupport, sha256, createCommitment, createSupportCommitment, verifyReveal, verifySupportReveal, randomHex, deriveDice, rngFor, snapshot, hashSnapshot, isSettledRound, roleContext, rolePair, roleChildPath, roleForUid, phaseFor, supportPhaseState, nextRoundNumber, makeMatch, prepareSupportPhase, beginRevealedRound, finishRevealedRound, resolveRevealedRound };

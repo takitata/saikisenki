@@ -152,6 +152,8 @@
           <div id="onlineSupportReveal" class="online-support-reveal" hidden aria-live="polite"></div>
           <div id="handControls" class="hand-controls" hidden><div class="choice-heading"><span class="panel-kicker">CHOOSE YOUR HAND</span><h2>じゃんけんの手を選ぶ</h2><p id="handChoiceHelp">CPUの手は確定するまで表示されません。</p></div><div class="hand-buttons"><button class="hand-button hand-rock" data-hand="rock"><span>✊</span><b>グー</b><small>赤属性</small></button><button class="hand-button hand-scissors" data-hand="scissors"><span>✌</span><b>チョキ</b><small>緑属性</small></button><button class="hand-button hand-paper" data-hand="paper"><span>✋</span><b>パー</b><small>青属性</small></button></div></div>
           <div id="diceControls" class="dice-controls" hidden><div class="choice-heading"><span class="panel-kicker">RAW DICE — REROLL</span><h2>生ダイスを確定する</h2><p id="diceChoiceSummary"></p></div><div class="dice-actions"><button id="rerollButton" class="secondary-button">振り直す</button><button id="keepDieButton" class="primary-button">この出目を使う <span>→</span></button></div></div>
+          <div id="healControls" class="revive-controls" hidden><div class="choice-heading"><span class="panel-kicker">DICE HEAL</span><h2>回復するカードを選ぶ</h2><p>生存しているバトルカードから選んでください。</p></div><div id="healChoiceList" class="revive-choice-list"></div></div>
+          <div id="nextCardControls" class="revive-controls" hidden><div class="choice-heading"><span class="panel-kicker">NEXT BATTLE CARD</span><h2>次に戦うカードを選ぶ</h2><p>生存している控えカードから選んでください。</p></div><div id="nextCardChoiceList" class="revive-choice-list"></div></div>
           <div id="reviveControls" class="revive-controls" hidden><div class="choice-heading"><span class="panel-kicker">GRAVEYARD — REVIVE</span><h2>復活するカードを選ぶ</h2><p id="reviveInstruction">選んだカードは最大HPの50%で元のバトル枠に戻ります。</p></div><div id="reviveChoiceList" class="revive-choice-list"></div></div>
           <div id="nextRoundControls" class="next-round-controls" hidden><button id="nextRoundButton" class="primary-button next-round">次のラウンドへ <span>→</span></button></div>
         </section>
@@ -169,7 +171,7 @@
       <footer class="card-info-footer"><button id="cardInfoClose" class="primary-button" type="button">閉じる</button></footer>
     </section>
   </div>
-  <script src="cards.js?v=friend-test-four-legends-2"></script>
+  <script src="cards.js?v=friend-test-switch-heal-next-2"></script>
   <script src="cpu-deck.js?v=friend-test-four-legends-2"></script>
   <script src="dev-card-pool.js"></script>
   <script src="battle.js?v=friend-test-four-legends-2"></script>

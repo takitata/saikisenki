@@ -40,11 +40,27 @@ Core.resolveRevealedRound(Engine,pairedGuest,{hand:'rock',supportChoice:none},{h
 assert.deepEqual(Core.snapshot(pairedHost,'host'),Core.snapshot(pairedGuest,'guest'));
 assert.equal(pairedHost.player.battleCards[1].currentHp,pairedHost.player.battleCards[1].maxHp);
 assert.equal(pairedHost.player.revivalUsed,true);assert.equal(pairedGuest.cpu.revivalUsed,true);
-const reveal={supportId:'s-1',supportDefinitionId:'l-red-suzaku',reviveTargetId:'grave-1',nonce:'0'.repeat(64)};
+// Switch support and chosen-target reveal replay identically for both fixed Firebase roles.
+const switchHostOwned=[{instanceId:'sh-active',definitionId:'n-blue-warrior'},{instanceId:'sh-target',definitionId:'n-green-warrior'},{instanceId:'sh-support',definitionId:'n-green-treant'}];
+const switchGuestOwned=[{instanceId:'sg-active',definitionId:'n-red-knight'}];
+const switchHostBattle=switchHostOwned.slice(0,2).map(item=>({instanceId:item.instanceId,definitionId:item.definitionId}));
+const switchGuestBattle=switchGuestOwned;
+const switchHost=Core.makeMatch(Engine,{ownOwned:switchHostOwned,ownBattleIds:['sh-active','sh-target'],opponentBattle:switchGuestBattle,cardMap,localRole:'host'});
+const switchGuest=Core.makeMatch(Engine,{ownOwned:switchGuestOwned,ownBattleIds:['sg-active'],opponentBattle:switchHostBattle,cardMap,localRole:'guest'});
+const switchChoice={supportId:'sh-support',supportDefinitionId:'n-green-treant',reviveTargetId:'',switchTargetId:'sh-target',nonce:'switch'};
+Core.resolveRevealedRound(Engine,switchHost,{hand:'rock',supportChoice:switchChoice},{hand:'rock',supportChoice:none},false,false,{initial:1,reroll:2},{initial:1,reroll:3});
+Core.resolveRevealedRound(Engine,switchGuest,{hand:'rock',supportChoice:none},{hand:'rock',supportChoice:switchChoice},false,false,{initial:1,reroll:3},{initial:1,reroll:2});
+assert.equal(switchHost.player.activeCard.instanceId,'sh-target');assert.equal(switchGuest.cpu.activeCard.instanceId,'sh-target');
+assert.deepEqual(Core.snapshot(switchHost,'host'),Core.snapshot(switchGuest,'guest'),'switched active state must match both online views');
+const reveal={supportId:'s-1',supportDefinitionId:'l-red-suzaku',reviveTargetId:'grave-1',switchTargetId:'',nonce:'0'.repeat(64)};
 (async()=>{
   const commitment=await Core.createSupportCommitment(1,'host',reveal);
   assert.equal(await Core.verifySupportReveal(1,'host',reveal,commitment),true,'Legend support and selected revive target verify under commit/reveal');
   const altered={...reveal,reviveTargetId:'grave-2'};
   assert.equal(await Core.verifySupportReveal(1,'host',altered,commitment),false,'revive target is bound to commitment');
-  console.log('OK: online Legend deterministic replay, host/guest mirrored snapshots, awakening counters, and sealed support-target verification.');
+  const switchReveal={...reveal,supportId:'switch-1',supportDefinitionId:'n-green-treant',reviveTargetId:'',switchTargetId:'reserve-1'};
+  const switchCommit=await Core.createSupportCommitment(1,'guest',switchReveal);
+  assert.equal(await Core.verifySupportReveal(1,'guest',switchReveal,switchCommit),true,'switch target is included in support commit/reveal');
+  assert.equal(await Core.verifySupportReveal(1,'guest',{...switchReveal,switchTargetId:'other-1'},switchCommit),false,'switch target cannot be changed after commit');
+  console.log('OK: online Legend deterministic replay, host/guest mirrored snapshots, awakening counters, and sealed revive/switch-target verification.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

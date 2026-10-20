@@ -156,13 +156,14 @@
       case "suppressRpsDieModifier": return "両者のじゃんけん由来ダイス補正を無効化";
       case "rawDieOverride": return `補正前ダイスを${amount}にする`;
       case "nextRoundRawDieOverride": return `次ラウンドの補正前ダイスを${amount}にする`;
+      case "switchBattleCard": return "交代先を選ぶ";
       case "revive": return `墓地のカード1体をHP${effect.condition?.hpPercent ?? amount}%で蘇生`;
       case "immuneToDamageOnRpsWin": return "じゃんけん勝利時、受けるダメージを0にする";
       case "damageBonusPerRpsLoss": return `じゃんけん敗北ごとにダメージ+${amount}`;
       default: return effect.kind;
     }
   }
-  function applySupportEffect(match, side, effect, sourceName, reviveTargetId = null) {
+  function applySupportEffect(match, side, effect, sourceName, options = {}) {
     const own = side.currentRoundEffects;
     const opponent = (side.id === "player" ? match.cpu : match.player).currentRoundEffects;
     if (effect.condition && typeof effect.condition === "object" && ["handIs", "rpsResult", "finalDieParity"].includes(effect.condition.kind)) {
@@ -196,10 +197,23 @@
       case "suppressRpsDieModifier": own.suppressRpsDieModifier = true; opponent.suppressRpsDieModifier = true; break;
       case "revive": {
         const candidates = side.graveyard.map(item => item.instanceId);
-        const targetId = reviveTargetId || candidates.map(id => side.battleCards.find(unit => unit.instanceId === id)).filter(Boolean).sort((a,b) => b.maxHp-a.maxHp || a.slotIndex-b.slotIndex)[0]?.instanceId;
+        const targetId = options.reviveTargetId || candidates.map(id => side.battleCards.find(unit => unit.instanceId === id)).filter(Boolean).sort((a,b) => b.maxHp-a.maxHp || a.slotIndex-b.slotIndex)[0]?.instanceId;
         if (side.revivalUsed || !targetId || !candidates.includes(targetId)) { result.actual = 0; result.inactive = true; result.reason = side.revivalUsed ? "revival-used" : "no-candidate"; break; }
         result.revived = reviveCard(side, targetId, effect.condition?.hpPercent ?? value, match);
         result.actual = result.revived ? 1 : 0;
+        break;
+      }
+      case "switchBattleCard": {
+        const current = side.activeCard;
+        const candidates = livingCards(side).filter(unit => unit !== current);
+        const target = candidates.find(unit => unit.instanceId === options.switchTargetId);
+        if (!target) { result.actual = 0; result.inactive = true; result.reason = "no-living-reserve"; break; }
+        side.activeBattleCardIndex = target.slotIndex;
+        target.hasEnteredBattle = true;
+        result.actual = 1;
+        result.from = current?.card.name || "";
+        result.to = target.card.name;
+        result.targetInstanceId = target.instanceId;
         break;
       }
       default: result.ignored = true;
@@ -216,17 +230,23 @@
     const card = side.supportCards.find(item => item.instanceId === instanceId);
     const definition = side.cardMap?.get?.(card.cardId) || match.cardMap.get(card.cardId);
     if (!definition) throw new Error("Unknown support card");
+    if (definition.support.some(effect => effect.kind === "switchBattleCard")) {
+      const candidates = livingCards(side).filter(unit => unit !== side.activeCard);
+      if (!candidates.length) throw new Error("交代できる生存控えカードがありません");
+      if (!candidates.some(unit => unit.instanceId === options.switchTargetId)) throw new Error("交代先のカードを選んでください");
+    }
     side.supportCards = side.supportCards.filter(item => item.instanceId !== instanceId);
     side.supportUsedThisRound = true;
     side.usedSupportCards.push({ ...card, usedRound: match.round });
     match.history[sideId].supportUses++;
-    const effects = definition.support.map(effect => applySupportEffect(match, side, effect, definition.name, options.reviveTargetId));
+    const effects = definition.support.map(effect => applySupportEffect(match, side, effect, definition.name, options));
     const event = { type: "support", side: sideId, card: definition.name, instanceId, effects };
     match.log.push({ round: match.round, type: "support", event, lines: supportLog(event) });
     return event;
   }
   function supportLog(event) {
     return event.effects.map(item => {
+      if(item.kind === "switchBattleCard" && item.to) return `${event.side === "cpu" ? "CPU" : "プレイヤー"}：${event.card}サポート使用 → ${item.from}から${item.to}へ交代`;
       if(item.kind === "revive" && item.revived) return `${event.side === "cpu" ? "CPU" : "プレイヤー"}：${event.card}サポート使用 → ${item.revived.name}をHP${item.revived.hp}/${item.revived.maxHp}で蘇生`;
       if(item.kind === "revive" && item.inactive) return `${event.side === "cpu" ? "CPU" : "プレイヤー"}：${event.card}サポート使用 → 蘇生なし${item.reason === "revival-used" ? "（蘇生権使用済み）" : "（墓地に対象なし）"}`;
       if(item.inactive) return `${event.side === "cpu" ? "CPU" : "プレイヤー"}：${event.card}サポート使用 → 条件を満たさず効果なし`;
@@ -245,7 +265,8 @@
       if (effect.kind === "heal") {
         const missing = side.activeCard ? side.activeCard.maxHp - side.activeCard.currentHp : 0;
         if (missing >= Math.max(8, value * 0.6)) score += Math.min(3, missing / 25);
-      } else if (["damageBonus","damageReduction","opponentDieModifier","dieModifier","rawDieOverride","opponentDamageReduction","nextOpponentDamageReduction","suppressRpsDieModifier"].includes(effect.kind)) score += 1.6;
+      } else if (effect.kind === "switchBattleCard") { if (livingCards(side).some(unit => unit !== side.activeCard)) score += 2.2; }
+      else if (["damageBonus","damageReduction","opponentDieModifier","dieModifier","rawDieOverride","opponentDamageReduction","nextOpponentDamageReduction","suppressRpsDieModifier"].includes(effect.kind)) score += 1.6;
       else if (effect.kind === "reroll") score += side.activeCard?.card.id === "n-white-clown" ? 0.7 : 1.2;
       else if (effect.kind === "revive" && !side.revivalUsed && side.graveyard.length) score += 2.4;
     }
@@ -262,14 +283,20 @@
     candidates.sort((a,b) => b.score - a.score);
     const top = candidates.filter(item => item.score === candidates[0].score);
     const picked = top[Math.floor(rng() * top.length)];
-    return applySupport(match, "cpu", picked.owned.instanceId, options);
+    const supportOptions = { ...options };
+    if (picked.definition.support.some(effect => effect.kind === "switchBattleCard")) {
+      const reserves = livingCards(cpu).filter(unit => unit !== cpu.activeCard).sort((a,b) => a.currentHp/a.maxHp - b.currentHp/b.maxHp || a.slotIndex-b.slotIndex);
+      if (!reserves.length) return null;
+      supportOptions.switchTargetId = reserves[0].instanceId;
+    }
+    return applySupport(match, "cpu", picked.owned.instanceId, supportOptions);
   }
-  function finishSupportPhase(match, playerSupportId = null, { rng = Math.random, cpuSupportId = null, skipCpuSupport = false, playerReviveTargetId = null, cpuReviveTargetId = null } = {}) {
+  function finishSupportPhase(match, playerSupportId = null, { rng = Math.random, cpuSupportId = null, skipCpuSupport = false, playerReviveTargetId = null, cpuReviveTargetId = null, playerSwitchTargetId = null, cpuSwitchTargetId = null } = {}) {
     if (match.status !== "supportSelection") throw new Error("Not in support phase");
     if (match.supportLockNextRound.player) match.log.push({round:match.round,type:"support",lines:["封印術師《封印》→ プレイヤーはこのラウンドのサポート使用不可"]});
-    else if (playerSupportId) applySupport(match, "player", playerSupportId, { reviveTargetId:playerReviveTargetId });
+    else if (playerSupportId) applySupport(match, "player", playerSupportId, { reviveTargetId:playerReviveTargetId, switchTargetId:playerSwitchTargetId });
     if (match.supportLockNextRound.cpu) match.log.push({round:match.round,type:"support",lines:["封印術師《封印》→ CPUはこのラウンドのサポート使用不可"]});
-    else if (!skipCpuSupport) chooseCpuSupport(match, rng, cpuSupportId, { reviveTargetId:cpuReviveTargetId });
+    else if (!skipCpuSupport) chooseCpuSupport(match, rng, cpuSupportId, { reviveTargetId:cpuReviveTargetId, switchTargetId:cpuSwitchTargetId });
     match.supportLockNextRound.player=false; match.supportLockNextRound.cpu=false;
     match.status = "handChoice";
   }
@@ -277,7 +304,7 @@
     if (match.status !== "supportSelection") throw new Error("Not in support phase");
     for (const [sideId, supportId] of [["player", playerSupportId], ["cpu", cpuSupportId]]) {
       if (match.supportLockNextRound[sideId]) match.log.push({ round: match.round, type: "support", lines: [`${sideId === "player" ? "プレイヤー" : "CPU"}：封印中のためサポートを使わない`] });
-      else if (supportId) applySupport(match, sideId, supportId, { reviveTargetId:sideId === "player" ? options.playerReviveTargetId : options.cpuReviveTargetId });
+      else if (supportId) applySupport(match, sideId, supportId, { reviveTargetId:sideId === "player" ? options.playerReviveTargetId : options.cpuReviveTargetId, switchTargetId:sideId === "player" ? options.playerSwitchTargetId : options.cpuSwitchTargetId });
     }
     match.supportLockNextRound.player = false;
     match.supportLockNextRound.cpu = false;
@@ -356,7 +383,7 @@
     data.rerollAvailable = false;
     return resolveDiceAndEffects(match);
   }
-  function decideRerolls(match, choices, { rng = Math.random, deferRevives = false } = {}) {
+  function decideRerolls(match, choices, { rng = Math.random, deferRevives = false, deferNextCardChoices = false, deferHealChoices = false, healChoices = {} } = {}) {
     if (match.status !== "diceChoice") throw new Error("Not in dice-choice phase");
     for (const sideId of ["player", "cpu"]) {
       const side = match[sideId];
@@ -374,7 +401,7 @@
       }
       data.rerollAvailable = false;
     }
-    return resolveDiceAndEffects(match, { deferRevives });
+    return resolveDiceAndEffects(match, { deferRevives, deferNextCardChoices, deferHealChoices, healChoices });
   }
 
   function rolledDice(raw, rpsResult, effects) {
@@ -530,18 +557,14 @@
     const record = { instanceId:card.instanceId, cardId:card.cardId, name:card.card.name, round, slotIndex:card.slotIndex };
     side.graveyard.push(record); runHooks(hooks,"onKO",{side,card,record}); return record;
   }
-  function moveAfterKO(side) {
+  function moveAfterKO(side, selectedInstanceId = null) {
     const old = side.activeCard;
     if (!old || old.currentHp > 0) return null;
     const total=side.battleCards.length;
-    for (let step=1; step<=total; step++) {
-      const index=(old.slotIndex+step)%total;
-      const candidate=side.battleCards[index];
-      if (!candidate.knockedOut && candidate.currentHp>0) {
-        side.activeBattleCardIndex=index; candidate.hasEnteredBattle=true;
-        return {from:old.card.name,to:candidate.card.name,slotIndex:index};
-      }
-    }
+    const candidates=livingCards(side);
+    const candidate=candidates.find(unit=>unit.instanceId===selectedInstanceId);
+    if(candidate){side.activeBattleCardIndex=candidate.slotIndex;candidate.hasEnteredBattle=true;return {from:old.card.name,to:candidate.card.name,slotIndex:candidate.slotIndex};}
+    if(candidates.length) { side.activeBattleCardIndex=total; return {from:old.card.name,to:null,slotIndex:null,pending:true,candidates:candidates.map(unit=>unit.instanceId)}; }
     side.activeBattleCardIndex=total;
     return {from:old.card.name,to:null,slotIndex:null};
   }
@@ -559,7 +582,7 @@
     // Revival HP uses floor to keep all percentage-based revival results integral.
     card.currentHp=Math.floor(card.maxHp*hpPercent/100);
     if (card.card.awakening?.kind === "reviveAfterKnockout") awakenUnit(match, card);
-    if(!side.activeCard) { side.activeBattleCardIndex=card.slotIndex; card.hasEnteredBattle=true; }
+    if(!side.activeCard && !match?.pendingNextCardChoices?.includes(side.id)) { side.activeBattleCardIndex=card.slotIndex; card.hasEnteredBattle=true; }
     return {instanceId,cardId:card.cardId,name:card.card.name,hp:card.currentHp,maxHp:card.maxHp,slotIndex:card.slotIndex,previousSlot:entry.slotIndex};
   }
   function finalizeRound(match, entry) {
@@ -572,11 +595,39 @@
     else if(cLiving===0) match.outcome="WIN";
     else if(pLiving===0) match.outcome="LOSE";
     else match.outcome=null;
+    if(!match.outcome && match.pendingNextCardChoices?.length) { match.status="nextCardChoice"; match._pendingEntry=entry; match.pendingRound=null; return entry; }
     match.status=match.outcome?"finished":"roundResolved";
     match.lastResultEntry=entry;
     match.log.push({round:match.round,type:"roundResult",entry,lines:entry.lines});
     runHooks(match.hooks,"afterRound",{match,entry});
     return entry;
+  }
+  function completeHealChoice(match, sideId, instanceId) {
+    if(match.status!=="healChoice"||!match.pendingHealChoices?.includes(sideId)) throw new Error("No healing target choice is pending");
+    const side=match[sideId];
+    if(!livingCards(side).some(unit=>unit.instanceId===instanceId&&unit.currentHp<unit.maxHp)) throw new Error("Invalid healing target");
+    match.healTargetChoices ||= {};
+    match.healTargetChoices[sideId]=instanceId;
+    match.pendingHealChoices=match.pendingHealChoices.filter(id=>id!==sideId);
+    if(match.pendingHealChoices.length) return null;
+    match.status="diceChoice";
+    return resolveDiceAndEffects(match,{healChoices:match.healTargetChoices});
+  }
+  function completeNextCardChoice(match, sideId, instanceId) {
+    const pending=match.pendingNextCardChoices||[];
+    if(match.status!=="nextCardChoice"||!pending.includes(sideId)) throw new Error("No next-card choice is pending for this side");
+    const side=match[sideId],unit=livingCards(side).find(item=>item.instanceId===instanceId);
+    if(!unit) throw new Error("Invalid next battle card choice");
+    side.activeBattleCardIndex=unit.slotIndex;unit.hasEnteredBattle=true;
+    const change=match._pendingEntry?.switches?.[sideId]; if(change){change.to=unit.card.name;change.slotIndex=unit.slotIndex;change.targetInstanceId=unit.instanceId;change.pending=false;}
+    match.pendingNextCardChoices=pending.filter(id=>id!==sideId);
+    if(match.pendingNextCardChoices.length) return match._pendingEntry;
+    const entry=match._pendingEntry;match._pendingEntry=null;return finalizeRound(match,entry);
+  }
+  function completeOnlineNextCardChoices(match, choices) {
+    const pending=[...(match.pendingNextCardChoices||[])];
+    for(const sideId of pending) completeNextCardChoice(match,sideId,choices?.[sideId]);
+    return match.lastResultEntry||match._pendingEntry;
   }
   function completeReviveChoice(match, instanceId) {
     if(match.status!=="reviveChoice"||!match.pendingRevive) throw new Error("No revive choice is pending");
@@ -590,7 +641,7 @@
     match._pendingEntry=null;
     return finalizeRound(match,entry);
   }
-  function resolveDiceAndEffects(match, { deferRevives = false } = {}) {
+  function resolveDiceAndEffects(match, { deferRevives = false, deferNextCardChoices = false, nextCardChoices = {}, deferHealChoices = false, healChoices = {} } = {}) {
     const pending=match.pendingRound; const p=match.player; const c=match.cpu;
     const arbiterActive=[p,c].some(side=>side.activeCard?.card.passives.some(passive=>passive.kind==="suppressRpsDieModifier"));
     p.currentRoundEffects.suppressRpsDieModifier ||= arbiterActive; c.currentRoundEffects.suppressRpsDieModifier ||= arbiterActive;
@@ -603,13 +654,44 @@
     const pAttack=calcAttack(p,pending.playerHand,pending.rpsResult,pDice);
     const cAttack=calcAttack(c,pending.cpuHand,cpuResult,cDice);
     const pEffects=collectCardEffects(match,p,pAttack,pending.playerHand,pending.rpsResult); const cEffects=collectCardEffects(match,c,cAttack,pending.cpuHand,cpuResult);
-    pEffects.selfDamage+=p.currentRoundEffects.selfDamage;
+    const requestedHealSides=[];
+    for(const [sideId,side,effects] of [["player",p,pEffects],["cpu",c,cEffects]]) {
+      if(!effects.healing) continue;
+      const living=livingCards(side);
+      const injured=living.filter(unit=>unit.currentHp<unit.maxHp);
+      const injuredReserves=injured.filter(unit=>unit!==side.activeCard);
+      const requested=healChoices?.[sideId];
+      if(requested && !injured.some(unit=>unit.instanceId===requested)) throw new Error("Invalid healing target");
+      if(injuredReserves.length && !requested && (deferHealChoices || sideId==="player")) requestedHealSides.push(sideId);
+    }
+    if(requestedHealSides.length) {
+      match.pendingHealChoices=requestedHealSides;
+      match.status="healChoice";
+      return match.lastResultEntry;
+    }
+    const healingRecords={player:null,cpu:null};
+    for(const [sideId,side,effects] of [["player",p,pEffects],["cpu",c,cEffects]]) {
+      if(!effects.healing) continue;
+      const living=livingCards(side);
+      const injured=living.filter(unit=>unit.currentHp<unit.maxHp);
+      const injuredReserves=injured.filter(unit=>unit!==side.activeCard);
+      let target=injured.find(unit=>unit.instanceId===healChoices?.[sideId]);
+      if(!target && injuredReserves.length===0 && side.activeCard && living.includes(side.activeCard)) target=side.activeCard;
+      if(!target && sideId==="cpu" && !deferHealChoices) target=injured.slice().sort((a,b)=>(a.maxHp-a.currentHp)-(b.maxHp-b.currentHp)||a.slotIndex-b.slotIndex).at(-1);
+      if(!target) continue;
+        const before=target.currentHp,healed=Math.min(effects.healing,target.maxHp-before),healedTo=before+healed;if(target!==side.activeCard)target.currentHp=healedTo;
+        healingRecords[sideId]={instanceId:target.instanceId,name:target.card.name,before,healedTo,amount:healed};
+      if(healed>0) effects.log.push(side.label+"："+target.card.name+"を"+healed+"回復");
+    }    pEffects.selfDamage+=p.currentRoundEffects.selfDamage;
     cEffects.selfDamage+=c.currentRoundEffects.selfDamage;
     const pDamage=resolveDamage(cAttack,c,p,pEffects); const cDamage=resolveDamage(pAttack,p,c,cEffects);
     runHooks(match.hooks,"beforeDamage",{match,pAttack,cAttack,pDamage,cDamage,pEffects,cEffects});
-    const hp=applyHpSimultaneously(p,c,pDamage,cDamage,pEffects,cEffects,pending.rpsResult);
-    for(const [effects,change] of [[pEffects,hp.player],[cEffects,hp.cpu]]) {
-      let remaining=change.healedTo-change.before;
+    const playerHpEffects={...pEffects,healing:healingRecords.player?.instanceId===p.activeCard?.instanceId?healingRecords.player.amount:0};
+    const cpuHpEffects={...cEffects,healing:healingRecords.cpu?.instanceId===c.activeCard?.instanceId?healingRecords.cpu.amount:0};
+    const hp=applyHpSimultaneously(p,c,pDamage,cDamage,playerHpEffects,cpuHpEffects,pending.rpsResult);
+    for(const [sideId,change] of [["player",hp.player],["cpu",hp.cpu]]) { const healed=healingRecords[sideId]; if(healed){change.healTargetId=healed.instanceId;change.healTargetBefore=healed.before;change.healTargetAfter=healed.healedTo;if(match[sideId].activeCard?.instanceId===healed.instanceId){change.before=healed.before;change.healedTo=healed.healedTo;}} }
+    for(const [sideId,effects,change] of [["player",pEffects,hp.player],["cpu",cEffects,hp.cpu]]) {
+      let remaining=healingRecords[sideId]?.amount||0;
       for(const source of effects.healSources) { const amount=Math.min(source.amount,remaining); remaining-=amount; if(amount) effects.log.push(`${source.name}${source.label}：${amount}回復`); }
     }
     runHooks(match.hooks,"afterDamage",{match,hp,pDamage,cDamage});
@@ -619,8 +701,29 @@
     if(kos.player) match.history.player.cardKOs++;
     if(kos.cpu) match.history.cpu.cardKOs++;
     const switches={player:null,cpu:null};
-    if(kos.player) switches.player=moveAfterKO(p);
-    if(kos.cpu) switches.cpu=moveAfterKO(c);
+    const pendingNext=[];
+    if(kos.player) {
+      const candidates=livingCards(p);
+      if(candidates.length && !nextCardChoices.player) {
+        p.activeBattleCardIndex=p.battleCards.length;
+        switches.player={from:kos.player.name,to:null,slotIndex:null,pending:true,candidates:candidates.map(unit=>unit.instanceId)};
+        pendingNext.push("player");
+      } else switches.player=moveAfterKO(p,nextCardChoices.player);
+    }
+    if(kos.cpu) {
+      const candidates=livingCards(c);
+      if(candidates.length && deferNextCardChoices && !nextCardChoices.cpu) {
+        c.activeBattleCardIndex=c.battleCards.length;
+        switches.cpu={from:kos.cpu.name,to:null,slotIndex:null,pending:true,candidates:candidates.map(unit=>unit.instanceId)};
+        pendingNext.push("cpu");
+      } else if(candidates.length && nextCardChoices.cpu) {
+        switches.cpu=moveAfterKO(c,nextCardChoices.cpu);
+      } else if(candidates.length) {
+        const picked=candidates.slice().sort((a,b)=>a.currentHp/a.maxHp-b.currentHp/b.maxHp||a.slotIndex-b.slotIndex)[0];
+        switches.cpu=moveAfterKO(c,picked.instanceId);
+      } else switches.cpu=moveAfterKO(c);
+    }
+    match.pendingNextCardChoices=pendingNext;
     for(const next of [...pEffects.nextEffects,...cEffects.nextEffects]) {
       if (next.key === "rawDieOverride") match[next.target].pendingRoundEffects.rawDieOverride = next.value;
       else match[next.target].pendingRoundEffects[next.key]+=next.value;
@@ -738,6 +841,6 @@
     const side=match[sideId]; return side.graveyard.map(entry=>({instanceId:entry.instanceId,cardId:entry.cardId,name:entry.name,maxHp:side.battleCards.find(card=>card.instanceId===entry.instanceId)?.maxHp||0}));
   }
 
-  window.BattleEngine={HANDS,HAND_LABELS,ATTRIBUTE_HAND,determineRps,rollD6,getRpsDieModifier,clampFinalDie,getBasicDamage,getExpertHandBonus,createHookSet,createSide,createMatch,conditionMet,effectValue,effectSummary,applySupport,chooseCpuSupport,finishSupportPhase,finishPairedSupportPhase,shouldCpuReroll,startRpsAndRoll,decidePlayerReroll,decideRerolls,rolledDice,getTriggerEffects,collectCardEffects,calcAttack,resolveDamage,applyHpSimultaneously,recordKO,moveAfterKO,livingCards,reviveCard,completeReviveChoice,completeOnlineRevives,resolveDiceAndEffects,advanceRound,formatLog,getReviveCandidates};
+  window.BattleEngine={HANDS,HAND_LABELS,ATTRIBUTE_HAND,determineRps,rollD6,getRpsDieModifier,clampFinalDie,getBasicDamage,getExpertHandBonus,createHookSet,createSide,createMatch,conditionMet,effectValue,effectSummary,applySupport,chooseCpuSupport,finishSupportPhase,finishPairedSupportPhase,shouldCpuReroll,startRpsAndRoll,decidePlayerReroll,decideRerolls,rolledDice,getTriggerEffects,collectCardEffects,calcAttack,resolveDamage,applyHpSimultaneously,recordKO,moveAfterKO,livingCards,reviveCard,completeReviveChoice,completeOnlineRevives,completeHealChoice,completeNextCardChoice,completeOnlineNextCardChoices,resolveDiceAndEffects,advanceRound,formatLog,getReviveCandidates};
   if(typeof module!=="undefined"&&module.exports) module.exports=window.BattleEngine;
 })();
