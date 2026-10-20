@@ -32,13 +32,13 @@
   function refreshCpuDeck() {
     cpuRoster = window.CPU_DECK.generateRoster(window.CARD_DATA);
     cpuOwned = cpuRoster.owned;
-    cpuBattleIds = window.CPU_DECK.chooseBattleIds(cpuOwned.map(item => item.cardId), byId, MAX_BATTLE_CARDS);
+    cpuBattleIds = window.CPU_DECK.chooseBattleInstances(cpuOwned, byId, MAX_BATTLE_CARDS);
     renderCpuPreview();
   }
   function renderCpuPreview() {
     const battleSet = new Set(cpuBattleIds);
-    const battle = cpuOwned.filter(item => battleSet.has(item.cardId));
-    const support = cpuOwned.filter(item => !battleSet.has(item.cardId));
+    const battle = cpuOwned.filter(item => battleSet.has(item.instanceId));
+    const support = cpuOwned.filter(item => !battleSet.has(item.instanceId));
     const rows = list => list.map(item => teamRow(item, "", false)).join("");
     $("#cpuRareCount").textContent = cpuRoster.rareCount;
     $("#cpuBattlePreview").innerHTML = rows(battle);
@@ -234,7 +234,7 @@
   }
   function beginBattle() {
     if (selectedOrder.length < 1) return;
-    const cpuOrder = cpuBattleIds.map(id => cpuOwned.find(item => item.cardId === id).instanceId);
+    const cpuOrder = [...cpuBattleIds];
     match = engine.createMatch({ playerOwned: playerOwned.map(item => ({...item})), playerOrder: [...selectedOrder], cpuOwned: cpuOwned.map(item => ({...item})), cpuOrder, cardMap: byId });
     $("#startView").hidden=true; $("#buildView").hidden = true; $("#completeView").hidden = true; $("#battleView").hidden = false;
     setPhase("PHASE 03", "バトル");
@@ -279,8 +279,8 @@
     renderPoolGrid(); updateCounts();
   }
   function autoOrganizePlayer() {
-    const battleIds = window.CPU_DECK.chooseBattleIds(playerOwned.map(item => item.cardId), byId, MAX_BATTLE_CARDS);
-    selectedOrder.splice(0, selectedOrder.length, ...battleIds.map(id => playerOwned.find(item => item.cardId === id).instanceId));
+    const battleIds = window.CPU_DECK.chooseBattleInstances(playerOwned, byId, MAX_BATTLE_CARDS);
+    selectedOrder.splice(0, selectedOrder.length, ...battleIds);
     renderGrid(); updateCounts();
   }
   function prepareBothRandom() {

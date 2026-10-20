@@ -38,7 +38,9 @@
   function createOnlineDeal(uid, cardData, rng = Math.random) {
     const roster = window.CPU_DECK.generateRoster(cardData, rng);
     return {
+      normalCount: roster.normalCount,
       rareCount: roster.rareCount,
+      legendCount: roster.legendCount,
       cards: roster.owned.map((item, index) => ({
         instanceId: `${uid.slice(0, 8)}-${String(index + 1).padStart(2, "0")}`,
         definitionId: item.cardId,

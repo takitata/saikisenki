@@ -17,7 +17,7 @@ const cases = [
   assert.equal(Core.supportCommitProtocol, 'saikisenki-support-v2');
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   const cacheKeys = [...html.matchAll(/(?:src|href)="(?:style\.css|cards\.js|cpu-deck\.js|dev-card-pool\.js|battle\.js|game\.js|online-schema\.js|online-battle-core\.js|online\.js)\?v=([^"]+)"/g)].map(match => match[1]);
-  assert.ok(cacheKeys.length >= 9 && cacheKeys.every(key => key === 'friend-test-support-commit-v2-1'),
+  assert.ok(cacheKeys.length >= 9 && cacheKeys.every(key => key === 'friend-test-rarity-patterns-20261020'),
     'all local app assets use the same cache-busting release key');
   for (const [role, choice] of cases) {
     const round = 7;
