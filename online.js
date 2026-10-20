@@ -53,6 +53,30 @@ import {
   const core = window.OnlineBattleCore;
   const gameEngine = window.BattleEngine;
   const cardMap = new Map(window.CARD_DATA.map(card => [card.id, card]));
+  const requiredSupportCommitProtocol = "saikisenki-support-v2";
+  if (core.supportCommitProtocol !== requiredSupportCommitProtocol) {
+    throw new Error(`オンライン対戦のスクリプト版が混在しています（support protocol: ${core.supportCommitProtocol || "unknown"}）。ページを再読み込みしてください。`);
+  }
+
+  async function assertSupportReveals(round, roundData) {
+    for (const fixedRole of ["host", "guest"]) {
+      const reveal = roundData.supportReveals?.[fixedRole];
+      const commitment = roundData.supportCommits?.[fixedRole];
+      if (await core.verifySupportReveal(round, fixedRole, reveal, commitment)) continue;
+      let revealedHash = "";
+      if (reveal) {
+        try { revealedHash = await core.createSupportCommitment(round, fixedRole, reveal); } catch {}
+      }
+      console.error("[Saikisenki online] support commit-reveal mismatch", {
+        roomId: currentRoom?.roomId || "unknown",
+        round,
+        role: fixedRole,
+        commitmentPrefix: typeof commitment === "string" ? commitment.slice(0, 12) : "missing",
+        revealHashPrefix: revealedHash ? revealedHash.slice(0, 12) : "invalid reveal"
+      });
+      throw new Error(`サポートcommit-revealが一致しません（${fixedRole}側）。両端末で最新版を読み込み、新しいルームで再試行してください。ラウンドを停止しました。`);
+    }
+  }
 
   function errorText(error) {
     const code = error?.code || "";
@@ -224,7 +248,7 @@ import {
       const hostSupport = saved.supportReveals?.host;
       const guestSupport = saved.supportReveals?.guest;
       if (!host || !guest || !hostSupport || !guestSupport || saved.rerolls?.host === undefined || saved.rerolls?.guest === undefined) throw new Error(`ROUND ${roundNo} の確定データが不足しています。`);
-      if (!(await core.verifySupportReveal(roundNo, "host", hostSupport, saved.supportCommits?.host)) || !(await core.verifySupportReveal(roundNo, "guest", guestSupport, saved.supportCommits?.guest))) throw new Error(`ROUND ${roundNo} のサポートcommit-reveal検証に失敗しました。`);
+      await assertSupportReveals(roundNo, saved);
       if (!(await core.verifyReveal(roundNo, "host", host, saved.actionCommits?.host)) || !(await core.verifyReveal(roundNo, "guest", guest, saved.actionCommits?.guest))) throw new Error(`ROUND ${roundNo} のcommit-reveal検証に失敗しました。`);
       const dice = await core.deriveDice(currentRoom.roomId, roundNo, host.seed, guest.seed);
       const actions = core.rolePair(saved.actionReveals, role);
@@ -245,7 +269,7 @@ import {
     const supportSealedByEffect = Boolean(match.supportLockNextRound.player);
     if (!core.isSettledRound(saved) && saved.supportReveals?.host && saved.supportReveals?.guest) {
       const hostSupport = saved.supportReveals.host, guestSupport = saved.supportReveals.guest;
-      if (!(await core.verifySupportReveal(roundNo, "host", hostSupport, saved.supportCommits?.host)) || !(await core.verifySupportReveal(roundNo, "guest", guestSupport, saved.supportCommits?.guest))) throw new Error(`ROUND ${roundNo} のサポートcommit-reveal検証に失敗しました。`);
+      await assertSupportReveals(roundNo, saved);
       const ownSealed = Boolean(match.supportLockNextRound.player);
       const opponentSealed = Boolean(match.supportLockNextRound.cpu);
       const supports = core.rolePair(saved.supportReveals, role);
@@ -414,8 +438,7 @@ import {
     }
     const revealedSupports = core.rolePair(round.supportReveals, role);
     if (revealedSupports.self && revealedSupports.opponent) {
-      const commits = core.rolePair(round.supportCommits, role);
-      if (!(await core.verifySupportReveal(roundNumber, role, revealedSupports.self, commits.self)) || !(await core.verifySupportReveal(roundNumber, roles.opponentRole, revealedSupports.opponent, commits.opponent))) throw new Error("サポートcommit-revealが一致しません。ラウンドを停止しました。");
+      await assertSupportReveals(roundNumber, round);
     }
     const actionCommits = core.rolePair(round.actionCommits, role);
     const actionReveals = core.rolePair(round.actionReveals, role);

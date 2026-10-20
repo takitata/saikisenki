@@ -5,12 +5,13 @@
   else root.OnlineBattleCore = api;
 })(typeof window !== "undefined" ? window : globalThis, function () {
   const encoder = new TextEncoder();
+  const supportCommitProtocol = "saikisenki-support-v2";
   const stableAction = (round, role, choice) => JSON.stringify({
     protocol: "saikisenki-rps-v1", round, role,
     hand: choice.hand, seed: choice.seed, nonce: choice.nonce
   });
   const stableSupport = (round, role, choice) => JSON.stringify({
-    protocol: "saikisenki-support-v1", round, role,
+    protocol: supportCommitProtocol, round, role,
     supportId: choice.supportId || "", supportDefinitionId: choice.supportDefinitionId || "", reviveTargetId: choice.reviveTargetId || "", switchTargetId: choice.switchTargetId || "", nonce: choice.nonce
   });
   async function sha256(value) {
@@ -236,5 +237,5 @@
     if(match.status==="nextCardChoice" && match.pendingNextCardChoices?.every(sideId=>nextCardChoices[sideId])) engine.completeOnlineNextCardChoices(match,nextCardChoices);
     return match;
   }
-  return { stableAction, stableSupport, sha256, createCommitment, createSupportCommitment, verifyReveal, verifySupportReveal, randomHex, deriveDice, rngFor, snapshot, hashSnapshot, isSettledRound, roleContext, rolePair, roleChildPath, roleForUid, phaseFor, supportPhaseState, nextRoundNumber, makeMatch, prepareSupportPhase, beginRevealedRound, finishRevealedRound, resolveRevealedRound };
+  return { supportCommitProtocol, stableAction, stableSupport, sha256, createCommitment, createSupportCommitment, verifyReveal, verifySupportReveal, randomHex, deriveDice, rngFor, snapshot, hashSnapshot, isSettledRound, roleContext, rolePair, roleChildPath, roleForUid, phaseFor, supportPhaseState, nextRoundNumber, makeMatch, prepareSupportPhase, beginRevealedRound, finishRevealedRound, resolveRevealedRound };
 });
