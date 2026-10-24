@@ -1,8 +1,10 @@
 /* Shared, non-secret schema seed for the Firebase room lobby. */
 (() => {
-  function createRoomSeed(hostUid, createdAt) {
+  function createRoomSeed(hostUid, createdAt, mode = "random") {
+    if (mode !== "random" && mode !== "free") throw new Error("Unknown online deck mode");
     return {
       schemaVersion: 1,
+      mode,
       status: "waiting",
       createdAt,
       hostUid,
@@ -38,6 +40,7 @@
   function createOnlineDeal(uid, cardData, rng = Math.random) {
     const roster = window.CPU_DECK.generateRoster(cardData, rng);
     return {
+      mode: "random",
       normalCount: roster.normalCount,
       rareCount: roster.rareCount,
       legendCount: roster.legendCount,
@@ -48,6 +51,38 @@
       }))
     };
   }
+  function createFreeDeckDeal(uid, role, definitionIds, cardData) {
+    if (!Array.isArray(definitionIds) || definitionIds.length !== 15 || !["host", "guest"].includes(role)) return null;
+    const definitions = new Map(cardData.map(card => [card.id, card]));
+    const counts = { normal: 0, rare: 0, legend: 0 };
+    const cards = definitionIds.map((definitionId, index) => {
+      const definition = definitions.get(definitionId);
+      if (!definition || !Object.hasOwn(counts, definition.rarity)) return null;
+      counts[definition.rarity]++;
+      return {
+        instanceId: `${role}-free-${String(index).padStart(2, "0")}`,
+        definitionId,
+        rarity: definition.rarity
+      };
+    });
+    if (cards.some(card => !card)) return null;
+    return { mode: "free", normalCount: counts.normal, rareCount: counts.rare, legendCount: counts.legend, cards };
+  }
+  function validateOnlineDeal(deal, cardData, mode = "random", uid = "", role = "host") {
+    if (!deal || !Array.isArray(deal.cards) || deal.cards.length !== 15) return false;
+    const definitions = new Map(cardData.map(card => [card.id, card]));
+    if (new Set(deal.cards.map(card => card.instanceId)).size !== 15) return false;
+    for (const [index, item] of deal.cards.entries()) {
+      const definition = definitions.get(item.definitionId);
+      if (!definition || item.rarity !== definition.rarity || typeof item.instanceId !== "string") return false;
+      if (mode === "free" && item.instanceId !== `${role}-free-${String(index).padStart(2, "0")}`) return false;
+    }
+    const counts = { normal: 0, rare: 0, legend: 0 };
+    for (const item of deal.cards) counts[item.rarity]++;
+    if (counts.normal !== deal.normalCount || counts.rare !== deal.rareCount || counts.legend !== deal.legendCount) return false;
+    if (mode === "free") return deal.mode === "free" && counts.normal + counts.rare + counts.legend === 15;
+    return [[12,3,0],[13,2,0],[11,4,0],[12,2,1],[10,5,0],[11,3,1]].some(([normal,rare,legend]) => normal === counts.normal && rare === counts.rare && legend === counts.legend);
+  }
   function createOnlineFormation(battleInstanceIds, deal) {
     if (!Array.isArray(battleInstanceIds) || battleInstanceIds.length < 1 || battleInstanceIds.length > 5) return null;
     const known = new Set((deal?.cards || []).map(card => card.instanceId));
@@ -57,5 +92,5 @@
     if (chosen.some(card => card?.formationRestriction?.exclusive) && battleInstanceIds.length !== 1) return null;
     return { battleInstanceIds: [...battleInstanceIds], ready: true, readyAt: Date.now() };
   }
-  window.OnlineRoomSchema = { createRoomSeed, claimGuestSlot, createOnlineDeal, createOnlineFormation };
+  window.OnlineRoomSchema = { createRoomSeed, claimGuestSlot, createOnlineDeal, createFreeDeckDeal, validateOnlineDeal, createOnlineFormation };
 })();

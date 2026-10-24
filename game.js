@@ -524,7 +524,7 @@
     $("#onlineBattleStatus").textContent = onlineBattleStatus;
     $("#battleBackButton").textContent = onlineBattleMode ? "ルームを退出" : "編成に戻る";
     $("#handChoiceHelp").textContent = onlineBattleMode ? "公開されたサポートを確認して手を選びます。じゃんけんの手は両者の確定後に公開されます。" : "CPUの手は確定するまで表示されません。";
-    $("#nextRoundButton").disabled = onlineBattleMode && (!onlineBattleStatus.includes("次のラウンド") || onlineBattleStatus.includes("準備完了"));
+    $("#nextRoundButton").disabled = onlineBattleMode && (!onlineBattleStatus.includes("次のラウンド") || onlineBattleStatus.includes("準備完了") || onlineBattleStatus.includes("同期中"));
     $("#playerBattlePanel").innerHTML = cardPanel(match.player, "player");
     $("#cpuBattlePanel").innerHTML = cardPanel(match.cpu, "cpu");
     $("#roundReveal").innerHTML = renderLatestResult();

@@ -21,11 +21,14 @@ import {
   const $ = id => document.getElementById(id);
   const els = {
     mode: $("onlineModeButton"), view: $("onlineView"), back: $("onlineBackButton"),
+    modeSelect: $("onlineModeSelect"), roomMode: $("onlineRoomModeLabel"),
     create: $("createRoomButton"), join: $("joinRoomButton"), input: $("roomIdInput"),
     connection: $("onlineConnectionStatus"), dot: $("onlineConnectionDot"), auth: $("onlineAuthStatus"),
     actions: $("onlineLobbyActions"), roomPanel: $("onlineRoomPanel"), roomId: $("onlineRoomId"),
     roomMessage: $("onlineRoomMessage"), opponent: $("onlineOpponentStatus"), error: $("onlineError"),
-    formation: $("onlineFormationPanel"), cards: $("onlineCardGrid"), rareCount: $("onlineRareCount"),
+    formation: $("onlineFormationPanel"), cards: $("onlineCardGrid"), normalCount: $("onlineNormalCount"), rareCount: $("onlineRareCount"), legendCount: $("onlineLegendCount"),
+    deckBuilder: $("onlineDeckBuilderPanel"), deckCatalog: $("onlineDeckCatalog"), deckSelected: $("onlineDeckSelected"),
+    deckCount: $("onlineDeckCount"), deckRarityCounts: $("onlineDeckRarityCounts"), deckError: $("onlineDeckError"), deckConfirm: $("onlineDeckConfirmButton"),
     battleCount: $("onlineBattleCount"), supportCount: $("onlineSupportCount"), ready: $("onlineReadyButton"),
     readyStatus: $("onlineReadyStatus"), formationError: $("onlineFormationError")
   };
@@ -43,6 +46,9 @@ import {
   let formationRoomKey = "";
   let dealCreationRequested = false;
   let onlineDeal = null;
+  let freeDeckSelection = [];
+  let freeDeckFilter = "all";
+  let freeDeckCommitInFlight = false;
   let onlineFormation = null;
   let onlineBattleIds = [];
   let handlingOpponentExit = false;
@@ -108,6 +114,7 @@ import {
     try { return JSON.parse(sessionStorage.getItem("saikisenki-online-room") || "null"); } catch { return null; }
   }
   function setPaired(paired, room) {
+    els.roomMode.textContent = room.mode === "free" ? "自由デッキ対戦" : "ランダムデッキ対戦";
     els.view.classList.toggle("is-matched", paired);
     document.querySelector(".online-panel")?.classList.toggle("is-matched", paired);
     els.roomPanel.hidden = false;
@@ -153,6 +160,70 @@ import {
     if (start) window.CPUOnlineBattleUI.start(match, controller, `${message}${connectionMessage}`, supportState);
     else window.CPUOnlineBattleUI.update(match, `${message}${connectionMessage}`, supportState);
   }
+  function freeDeckDraftKey() { return `saikisenki-free-deck-draft:${currentRoom?.roomId || ""}:${auth.currentUser?.uid || ""}`; }
+  function saveFreeDeckDraft() { try { sessionStorage.setItem(freeDeckDraftKey(), JSON.stringify(freeDeckSelection)); } catch {} }
+  function restoreFreeDeckDraft() {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(freeDeckDraftKey()) || "[]");
+      freeDeckSelection = Array.isArray(saved) ? saved.filter(id => window.CARD_DATA.some(card => card.id === id)).slice(0, 15) : [];
+    } catch { freeDeckSelection = []; }
+  }
+  function renderFreeDeckBuilder() {
+    if (!els.deckBuilder || !currentRoom) return;
+    const cards = window.CARD_DATA || [];
+    const visible = freeDeckFilter === "all" ? cards : cards.filter(card => card.rarity === freeDeckFilter);
+    const counts = { normal: 0, rare: 0, legend: 0 };
+    for (const id of freeDeckSelection) {
+      const card = cards.find(item => item.id === id);
+      if (card && Object.hasOwn(counts, card.rarity)) counts[card.rarity]++;
+    }
+    els.deckCount.textContent = String(freeDeckSelection.length);
+    els.deckRarityCounts.textContent = `Normal ${counts.normal} · Rare ${counts.rare} · Legend ${counts.legend}`;
+    els.deckConfirm.disabled = freeDeckSelection.length !== 15 || freeDeckCommitInFlight;
+    els.deckCatalog.innerHTML = visible.map(card => `
+      <article class="online-deck-card attr-${card.attribute} rarity-${card.rarity}">
+        <div class="online-deck-card-top"><span>${window.CARD_RARITY_LABELS[card.rarity]}</span><span>${window.CARD_ATTRIBUTE_LABELS[card.attribute]}</span></div>
+        <h3>${card.name}</h3><p>HP ${card.baseHp}</p>
+        <div class="online-deck-dice" aria-label="ダイス性能">${card.dice.map((value,index)=>`<span>${index+1}<b>${value}</b></span>`).join("")}</div>
+        <div class="online-deck-card-actions"><button type="button" data-free-add="${card.id}" ${freeDeckSelection.length >= 15 ? "disabled" : ""}>＋ 追加</button><button type="button" class="is-detail" data-free-detail="${card.id}">能力詳細</button></div>
+      </article>`).join("");
+    els.deckSelected.innerHTML = freeDeckSelection.map((id,index) => {
+      const card = cards.find(item => item.id === id);
+      return card ? `<div class="online-deck-chip"><span>${String(index+1).padStart(2,"0")}. ${card.name} <small>${window.CARD_RARITY_LABELS[card.rarity]}</small></span><button type="button" data-free-remove="${index}" aria-label="${card.name} ${index+1}枚目を取り消す">取り消す</button></div>` : "";
+    }).join("") || "<p class=\"online-copy\">まだカードが選択されていません。</p>";
+    els.deckBuilder.querySelectorAll("[data-free-filter]").forEach(button => button.classList.toggle("active", button.dataset.freeFilter === freeDeckFilter));
+  }
+  function addFreeDeckCard(definitionId) {
+    if (freeDeckSelection.length >= 15 || !window.CARD_DATA.some(card => card.id === definitionId)) return;
+    freeDeckSelection.push(definitionId);
+    saveFreeDeckDraft(); renderFreeDeckBuilder();
+  }
+  async function confirmFreeDeck() {
+    if (freeDeckCommitInFlight || freeDeckSelection.length !== 15 || !currentRoom || !auth.currentUser) return;
+    freeDeckCommitInFlight = true; els.deckError.textContent = ""; renderFreeDeckBuilder();
+    try {
+      const uid = auth.currentUser.uid;
+      const deal = window.OnlineRoomSchema.createFreeDeckDeal(uid, myRole(), [...freeDeckSelection], window.CARD_DATA);
+      if (!deal || !window.OnlineRoomSchema.validateOnlineDeal(deal, window.CARD_DATA, "free", uid, myRole())) throw new Error("15枚のカード構成を確認できませんでした。");
+      const dealRef = ref(db, `${privatePath(currentRoom.roomId, uid)}/deal`);
+      const result = await runTransaction(dealRef, current => current == null ? deal : undefined, { applyLocally: false });
+      let savedDeal = result.snapshot?.val();
+      if (!result.committed) {
+        const stored = await get(dealRef);
+        savedDeal = stored.exists() ? stored.val() : null;
+      }
+      if (!savedDeal || !window.OnlineRoomSchema.validateOnlineDeal(savedDeal, window.CARD_DATA, "free", uid, myRole())) throw new Error("確定済みの自由デッキを復元できませんでした。");
+      onlineDeal = savedDeal; freeDeckSelection = savedDeal.cards.map(card => card.definitionId);
+      try { sessionStorage.removeItem(freeDeckDraftKey()); } catch {}
+      els.deckBuilder.hidden = true; els.formation.hidden = false;
+      renderOnlineFormation(currentRoomState || {});
+      const snapshot = await get(ref(db, roomPath(currentRoom.roomId)));
+      if (snapshot.exists()) await queueBattleRoom(snapshot.val());
+    } catch (error) {
+      els.deckError.textContent = errorText(error);
+      console.error("[Saikisenki online] free deck confirmation failed", { roomId:currentRoom?.roomId, myRole:currentRoom?.role, code:error?.code || "", message:error?.message || String(error) });
+    } finally { freeDeckCommitInFlight = false; renderFreeDeckBuilder(); }
+  }
   async function ensureOwnTeamManifest(room) {
     if (!currentRoom || !onlineDeal || !onlineFormation?.ready) return;
     const teamRef = ref(db, `${battlePath(currentRoom.roomId)}/teams/${myRole()}`);
@@ -176,7 +247,14 @@ import {
     if (!core.isSettledRound(roundData) || !roundData?.nextReady?.host || !roundData?.nextReady?.guest) return false;
     const counterRef = ref(db, `${battlePath(currentRoom.roomId)}/currentRound`);
     const result = await runTransaction(counterRef, current => current === String(roundNumber) ? String(roundNumber + 1) : undefined, { applyLocally: false });
-    return result.committed;
+    if (result.committed) return true;
+    // The other client may have won the same transaction. Treat that as success
+    // after reading the authoritative counter instead of replaying the stale round.
+    const latest = await get(counterRef);
+    const latestRound = Number(latest.val() || 0);
+    if (latestRound > roundNumber) return true;
+    if (latestRound < roundNumber) throw new Error(`ラウンド番号が不正です（現在 ${latestRound}、処理中 ${roundNumber}）。`);
+    return false;
   }
   function revivePair(roundData, role) { return { player: roundData?.revives?.[role] || null, cpu: roundData?.revives?.[otherRole(role)] || null }; }
   function ownedForDeal(deal) { return (deal?.cards || []).map(item => ({ instanceId: item.instanceId, definitionId: item.definitionId })); }
@@ -231,7 +309,12 @@ import {
       if (required) return "あなた：復活選択済み · 結果を確認中…";
     }
     if (match?.status === "roundResolved" && !core.isSettledRound(roundData)) return "結果を確認中…";
-    if (core.isSettledRound(roundData)) return match?.status === "finished" ? "対戦終了 · ラウンド結果確定" : roundData.nextReady?.[role] ? "あなた：次のラウンドへ進む準備完了 · 相手を待っています" : `ROUND ${match?.round} 確定 · 次のラウンドへ進めます`;
+    if (core.isSettledRound(roundData)) {
+      if (match?.status === "finished") return "対戦終了 · ラウンド結果確定";
+      if (roundData.nextReady?.host && roundData.nextReady?.guest) return "両者準備完了 · 次のラウンドを同期中…";
+      if (roundData.nextReady?.[role]) return "あなた：次のラウンドへ進む準備完了 · 相手を待っています";
+      return `ROUND ${match?.round} 確定 · 次のラウンドへ進めます`;
+    }
     return "相手の選択を待っています";
   }
   async function replayBattle(room) {
@@ -301,6 +384,7 @@ import {
         if (match.status === "roundResolved" || match.status === "finished") {
           const resultHash = await core.hashSnapshot(core.snapshot(match, role));
           if (!saved.resultClaims?.[role]) await writeOnce(roundRolePath(currentRoom.roomId, roundNo, "resultClaims", role), { hash: resultHash }, { roomId:currentRoom.roomId, round:roundNo, myRole:role });
+          else if (saved.resultClaims[role].hash !== resultHash) throw new Error(`ROUND ${roundNo} の保存済み結果がこの端末の再計算と一致しません。対戦データを変更せず停止しました。`);
           if (core.isSettledRound(saved) && (saved.resultClaims.host.hash !== resultHash || saved.resultClaims.guest.hash !== resultHash)) throw new Error(`ROUND ${roundNo} の結果ハッシュが一致しません。`);
         }
       }
@@ -417,6 +501,9 @@ import {
   }
   let battleStateCache = {};
   async function handleBattleRoom(room) {
+    const incomingRound = Number(room.match?.currentRound || 1);
+    const displayedRound = Number(battleStateCache.currentRound || 1);
+    if (incomingRound < displayedRound) return;
     currentRoomState = room;
     if (!currentRoom || !room.players?.host?.ready || !room.players?.guest?.ready || !onlineFormation?.ready || !onlineDeal) return;
     await ensureOwnTeamManifest(room);
@@ -455,12 +542,18 @@ import {
     if (round.resultClaims?.host?.hash && round.resultClaims?.guest?.hash && round.resultClaims.host.hash !== round.resultClaims.guest.hash) throw new Error("両端末で計算したラウンド結果が一致しません。同期を停止しました。");
     await replayBattle(room);
   }
+  const queueBattleRoom = core.createSerialQueue(
+    room => handleBattleRoom(room),
+    error => setBattleError(error.message || errorText(error))
+  );
   function renderOnlineFormation(room) {
     if (!onlineDeal) return;
     const selected = new Set(onlineBattleIds);
     const locked = Boolean(onlineFormation?.ready);
     els.formation.hidden = false;
+    els.normalCount.textContent = String(onlineDeal.normalCount);
     els.rareCount.textContent = String(onlineDeal.rareCount);
+    els.legendCount.textContent = String(onlineDeal.legendCount);
     els.battleCount.textContent = String(selected.size);
     els.supportCount.textContent = String(Math.max(0, onlineDeal.cards.length - selected.size));
     els.ready.disabled = locked || selected.size < 1 || selected.size > 5;
@@ -490,26 +583,41 @@ import {
     onlineDeal = null;
     onlineFormation = null;
     onlineBattleIds = [];
-    els.formation.hidden = false;
+    const freeMode = room.mode === "free";
+    els.formation.hidden = freeMode;
+    els.deckBuilder.hidden = !freeMode;
     els.cards.innerHTML = "<p class=\"online-copy\">カードを準備しています…</p>";
     const path = privatePath(currentRoom.roomId, user.uid);
     const dealRef = ref(db, `${path}/deal`);
     const dealHandler = onValue(dealRef, snapshot => {
       if (snapshot.exists()) {
         onlineDeal = snapshot.val();
+        if (!window.OnlineRoomSchema.validateOnlineDeal(onlineDeal, window.CARD_DATA, room.mode === "free" ? "free" : "random", user.uid, myRole())) {
+          showError("このルームのカード配布データが現在の対戦モードと一致しません。部屋を作り直してください。");
+          return;
+        }
+        els.deckBuilder.hidden = true;
+        els.formation.hidden = false;
         if (onlineFormation?.ready) onlineBattleIds = [...onlineFormation.battleInstanceIds];
         renderOnlineFormation(room);
-        get(ref(db, roomPath(currentRoom.roomId))).then(value => handleBattleRoom(value.val() || {})).catch(error => setBattleError(error.message || errorText(error)));
+        get(ref(db, roomPath(currentRoom.roomId))).then(value => queueBattleRoom(value.val() || {})).catch(error => setBattleError(error.message || errorText(error)));
         return;
       }
       if (dealCreationRequested) return;
+      if (room.mode === "free") {
+        els.formation.hidden = true;
+        els.deckBuilder.hidden = false;
+        restoreFreeDeckDraft();
+        renderFreeDeckBuilder();
+        return;
+      }
       dealCreationRequested = true;
       const generatedDeal = window.OnlineRoomSchema.createOnlineDeal(user.uid, window.CARD_DATA);
       runTransaction(dealRef, current => current == null ? generatedDeal : undefined, { applyLocally: false })
         .then(async result => {
           if (!result.committed) {
             const stored = await get(dealRef);
-            if (stored.exists()) { onlineDeal = stored.val(); renderOnlineFormation(room); get(ref(db, roomPath(currentRoom.roomId))).then(value => handleBattleRoom(value.val() || {})).catch(error => setBattleError(error.message || errorText(error))); }
+            if (stored.exists()) { onlineDeal = stored.val(); renderOnlineFormation(room); get(ref(db, roomPath(currentRoom.roomId))).then(value => queueBattleRoom(value.val() || {})).catch(error => setBattleError(error.message || errorText(error))); }
             else showError("配布カードを確定できませんでした。再読み込みして復元を試してください。");
           }
         })
@@ -521,7 +629,7 @@ import {
       onlineFormation = snapshot.exists() ? snapshot.val() : null;
       if (onlineFormation?.ready) onlineBattleIds = [...onlineFormation.battleInstanceIds];
       renderOnlineFormation(room);
-      get(ref(db, roomPath(currentRoom.roomId))).then(value => handleBattleRoom(value.val() || {})).catch(error => setBattleError(error.message || errorText(error)));
+      get(ref(db, roomPath(currentRoom.roomId))).then(value => queueBattleRoom(value.val() || {})).catch(error => setBattleError(error.message || errorText(error)));
     }, error => showError(errorText(error)));
     formationUnsubscribe = () => off(formationRef, "value", formationHandler);
   }
@@ -580,7 +688,7 @@ import {
       const guestUid = room.players?.guest?.uid;
       const paired = room.status === "paired" || Boolean(guestUid);
       setPaired(paired, room);
-      handleBattleRoom(room).catch(error => setBattleError(error.message || errorText(error)));
+      queueBattleRoom(room);
     }, error => showError(errorText(error)));
     roomUnsubscribe = () => off(root, "value", roomHandler);
 
@@ -616,7 +724,8 @@ import {
       crypto.getRandomValues(random);
       const roomId = String(100000 + (random[0] % 900000));
       const createdAt = serverTimestamp();
-      const room = window.OnlineRoomSchema.createRoomSeed(user.uid, createdAt);
+      const selectedMode = els.modeSelect.value === "free" ? "free" : "random";
+      const room = window.OnlineRoomSchema.createRoomSeed(user.uid, createdAt, selectedMode);
       room.presence.host = { connected: true, changedAt: createdAt };
       try {
         await set(ref(db, roomPath(roomId)), room);
@@ -679,6 +788,7 @@ import {
     els.view.classList.remove("is-matched");
     document.querySelector(".online-panel")?.classList.remove("is-matched");
     els.roomPanel.hidden = true;
+    els.deckBuilder.hidden = true;
     els.formation.hidden = true;
     els.actions.hidden = false;
     els.newRoom.hidden = true;
@@ -764,6 +874,22 @@ import {
   els.join.addEventListener("click", joinRoom);
   els.input.addEventListener("input", () => { els.input.value = els.input.value.replace(/\D/g, "").slice(0, 6); });
   els.input.addEventListener("keydown", event => { if (event.key === "Enter") joinRoom(); });
+  els.deckCatalog.addEventListener("click", event => {
+    const detail = event.target.closest("[data-free-detail]");
+    if (detail) { window.CPUFormationUI.showCardDetail(detail.dataset.freeDetail); return; }
+    const add = event.target.closest("[data-free-add]");
+    if (add) addFreeDeckCard(add.dataset.freeAdd);
+  });
+  els.deckSelected.addEventListener("click", event => {
+    const remove = event.target.closest("[data-free-remove]");
+    if (!remove) return;
+    freeDeckSelection.splice(Number(remove.dataset.freeRemove), 1);
+    saveFreeDeckDraft(); renderFreeDeckBuilder();
+  });
+  els.deckBuilder.querySelectorAll("[data-free-filter]").forEach(button => button.addEventListener("click", () => {
+    freeDeckFilter = button.dataset.freeFilter; renderFreeDeckBuilder();
+  }));
+  els.deckConfirm.addEventListener("click", confirmFreeDeck);
   els.cards.addEventListener("click", event => {
     const detail = event.target.closest("[data-formation-detail]");
     if (detail) { window.CPUFormationUI.showCardDetail(detail.dataset.formationDetail); return; }

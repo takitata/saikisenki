@@ -71,7 +71,7 @@ assert.ok(dealRules['.write'].includes("auth.uid === $uid") && dealRules['.write
 assert.ok(dealRules['.validate'].includes("newData.hasChildren(['normalCount','rareCount','legendCount','cards'])"));
 assert.ok(dealRules['.validate'].includes("newData.child('legendCount').val() ==="));
 assert.ok(dealRules.cards.$index.definitionId['.validate'].includes('l-red-suzaku') && dealRules.cards.$index.definitionId['.validate'].includes('l-white-byakko'));
-assert.equal(dealRules.legendCount['.validate'], "newData.isNumber() && (newData.val() === 0 || newData.val() === 1)");
+assert.ok(dealRules.legendCount['.validate'].includes("newData.val() === 0 || newData.val() === 1"), 'random-deal Legend count remains restricted to 0 or 1');
 const onlineSource = fs.readFileSync(path.join(__dirname, '..', 'online.js'), 'utf8');
 assert.ok(onlineSource.includes('runTransaction(dealRef, current => current == null ? generatedDeal : undefined'), 'host/guest race can only create the private deal once');
 assert.ok(onlineSource.includes('const stored = await get(dealRef)'), 'the losing peer reads back the already-fixed Firebase deal');

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=friend-test-rarity-patterns-20261020">
+  <link rel="stylesheet" href="style.css?v=friend-test-free-deck-20261024">
 </head>
 <body>
   <div class="app-shell">
@@ -39,22 +39,41 @@
           <p class="online-copy">ルームを作ってIDを共有するか、友達のルームIDを入力してください。</p>
           <div class="online-connection"><i id="onlineConnectionDot"></i><span id="onlineConnectionStatus">接続状態を確認しています</span><small id="onlineAuthStatus">匿名認証 待機中</small></div>
           <div id="onlineLobbyActions" class="online-lobby-actions">
+            <label class="online-mode-picker" for="onlineModeSelect">対戦モード<select id="onlineModeSelect"><option value="random">ランダムデッキ対戦</option><option value="free">自由デッキ対戦</option></select></label>
             <button id="createRoomButton" class="primary-button">部屋を作る <span>＋</span></button>
             <div class="online-join"><label for="roomIdInput">ルームID</label><div><input id="roomIdInput" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="6桁のID"><button id="joinRoomButton" class="secondary-button">部屋に参加する <span>→</span></button></div></div>
           </div>
           <div id="onlineRoomPanel" class="online-room-panel" hidden>
             <span class="panel-kicker">ROOM ID</span>
             <strong id="onlineRoomId" class="online-room-id">000000</strong>
+            <p id="onlineRoomModeLabel" class="online-room-mode">ランダムデッキ対戦</p>
             <p id="onlineRoomMessage" class="online-room-message">対戦相手を待っています</p>
             <div class="online-player-status"><span><i class="live-dot"></i>あなた</span><span id="onlineOpponentStatus"><i class="waiting-dot"></i>対戦相手を待っています</span></div>
             <p class="online-room-note">2人が編成を確定するとオンラインバトルが始まります。</p>
             <div class="online-room-actions"><button id="newRoomButton" class="secondary-button" hidden>新しいルームを作る</button><button id="exitRoomButton" class="secondary-button">ルームを退出</button></div>
           </div>
+          <section id="onlineDeckBuilderPanel" class="online-deck-builder" hidden>
+            <p class="eyebrow">ONLINE BATTLE <span>— FREE DECK</span></p>
+            <h2>自由デッキを作る</h2>
+            <p class="online-copy">全56種類から同じカードを何枚でも選べます。15枚ちょうどで確定してください。</p>
+            <div class="online-deck-counts"><b>選択中 <span id="onlineDeckCount">0</span> / 15</b><span id="onlineDeckRarityCounts">Normal 0 · Rare 0 · Legend 0</span></div>
+            <div class="online-deck-filters" aria-label="カード種類フィルター">
+              <button type="button" class="active" data-free-filter="all">すべて 56</button>
+              <button type="button" data-free-filter="normal">Normal 40</button>
+              <button type="button" data-free-filter="rare">Rare 12</button>
+              <button type="button" data-free-filter="legend">Legend 4</button>
+            </div>
+            <div id="onlineDeckCatalog" class="online-deck-catalog" aria-label="選択可能なカード"></div>
+            <h3 class="online-deck-selected-title">選択した15枚</h3>
+            <div id="onlineDeckSelected" class="online-deck-selected"></div>
+            <p id="onlineDeckError" class="online-error" role="status" aria-live="polite"></p>
+            <button id="onlineDeckConfirmButton" class="primary-button" disabled>この15枚で確定</button>
+          </section>
           <section id="onlineFormationPanel" class="online-formation-panel" hidden>
             <p class="eyebrow">ONLINE BATTLE <span>— CARD FORMATION</span></p>
             <h2>カード編成</h2>
             <p class="online-copy">配られた15枚からバトルカードを1〜5枚選んでください。残りはサポートになります。</p>
-            <div class="online-formation-stats"><b>Rare <span id="onlineRareCount">—</span>枚</b><b>バトル：<span id="onlineBattleCount">0</span> / 5</b><b>サポート：<span id="onlineSupportCount">15</span></b></div>
+            <div class="online-formation-stats"><b>Normal <span id="onlineNormalCount">—</span></b><b>Rare <span id="onlineRareCount">—</span></b><b>Legend <span id="onlineLegendCount">—</span></b><b>バトル：<span id="onlineBattleCount">0</span> / 5</b><b>サポート：<span id="onlineSupportCount">15</span></b></div>
             <div id="onlineCardGrid" class="online-card-grid" aria-label="オンライン用の自分のカード"></div>
             <p id="onlineFormationError" class="online-error" role="status" aria-live="polite"></p>
             <button id="onlineAutoFormationButton" class="secondary-button online-auto-formation">編成もおまかせ</button>
@@ -171,13 +190,13 @@
       <footer class="card-info-footer"><button id="cardInfoClose" class="primary-button" type="button">閉じる</button></footer>
     </section>
   </div>
-  <script src="cards.js?v=friend-test-rarity-patterns-20261020"></script>
-  <script src="cpu-deck.js?v=friend-test-rarity-patterns-20261020"></script>
-  <script src="dev-card-pool.js?v=friend-test-rarity-patterns-20261020"></script>
-  <script src="battle.js?v=friend-test-rarity-patterns-20261020"></script>
-  <script src="game.js?v=friend-test-rarity-patterns-20261020"></script>
-  <script src="online-schema.js?v=friend-test-rarity-patterns-20261020"></script>
-  <script src="online-battle-core.js?v=friend-test-rarity-patterns-20261020"></script>
-  <script type="module" src="online.js?v=friend-test-rarity-patterns-20261020"></script>
+  <script src="cards.js?v=friend-test-free-deck-20261024"></script>
+  <script src="cpu-deck.js?v=friend-test-free-deck-20261024"></script>
+  <script src="dev-card-pool.js?v=friend-test-free-deck-20261024"></script>
+  <script src="battle.js?v=friend-test-free-deck-20261024"></script>
+  <script src="game.js?v=friend-test-free-deck-20261024"></script>
+  <script src="online-schema.js?v=friend-test-free-deck-20261024"></script>
+  <script src="online-battle-core.js?v=friend-test-free-deck-20261024"></script>
+  <script type="module" src="online.js?v=friend-test-free-deck-20261024"></script>
 </body>
 </html>

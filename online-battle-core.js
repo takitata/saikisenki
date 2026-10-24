@@ -189,6 +189,14 @@
     while (isSettledRound(matchData?.rounds?.[String(round)])) round++;
     return round;
   }
+  function createSerialQueue(handler, onError = () => {}) {
+    let tail = Promise.resolve();
+    return value => {
+      const task = tail.then(() => handler(value));
+      tail = task.catch(error => { try { onError(error); } catch {} });
+      return task;
+    };
+  }
   function makeMatch(engine, { ownOwned, ownBattleIds, opponentBattle, cardMap, localRole = "host" }) {
     const opponentOwned = opponentBattle.map(item => ({ instanceId: item.instanceId, cardId: item.definitionId }));
     const match = engine.createMatch({
@@ -237,5 +245,5 @@
     if(match.status==="nextCardChoice" && match.pendingNextCardChoices?.every(sideId=>nextCardChoices[sideId])) engine.completeOnlineNextCardChoices(match,nextCardChoices);
     return match;
   }
-  return { supportCommitProtocol, stableAction, stableSupport, sha256, createCommitment, createSupportCommitment, verifyReveal, verifySupportReveal, randomHex, deriveDice, rngFor, snapshot, hashSnapshot, isSettledRound, roleContext, rolePair, roleChildPath, roleForUid, phaseFor, supportPhaseState, nextRoundNumber, makeMatch, prepareSupportPhase, beginRevealedRound, finishRevealedRound, resolveRevealedRound };
+  return { supportCommitProtocol, stableAction, stableSupport, sha256, createCommitment, createSupportCommitment, verifyReveal, verifySupportReveal, randomHex, deriveDice, rngFor, snapshot, hashSnapshot, isSettledRound, roleContext, rolePair, roleChildPath, roleForUid, phaseFor, supportPhaseState, nextRoundNumber, createSerialQueue, makeMatch, prepareSupportPhase, beginRevealedRound, finishRevealedRound, resolveRevealedRound };
 });
